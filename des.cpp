@@ -565,17 +565,9 @@ class DES_Encryption: public ByteHelper<bool>
     {
         try
         {
-            _vectorT _permuted_input(this->_MAIN_KEY_SIZE);
-            for (std::uint16_t i{0}; i < _permuted_input.size(); ++i)
-            {
-                _permuted_input[i] = _64bitBlock[this->_IP[i] - 1];
-            }
-            struct _Halves halves(_PERM_INP_HALF_SIZE);
-            for (std::uint16_t i{0}; i < halves.l.size(); ++i)
-            {
-                halves.l[i] = _permuted_input[i];
-                halves.r[i] = _permuted_input[i + halves.l.size()];
-            }
+            if(_64bitBlock.size() != 64) throw std::invalid_argument("block size invalid!");
+            _vectorT _permuted_input = this->_64bitBlockPermutation(_64bitBlock);
+            struct _Halves halves = this->_64bitBlockPartition(_permuted_input);
             for (std::uint16_t r = this->_EXEC_ROUNDS - 1; r < this->_EXEC_ROUNDS; --r)
             {
                 _vectorT _expanded(this->_expansionPermutation(halves.r));
