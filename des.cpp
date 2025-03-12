@@ -1,4 +1,6 @@
 namespace DES {
+
+template <typename T>
 class ByteHelper {
     public:
 
@@ -12,9 +14,9 @@ class ByteHelper {
      * @param _source source data
      * @return const _vectorT 
      */
-    template <typename _bT> static const std::vector<bool> toBinary(const std::vector<_bT> _source)
+    template <typename _bT = unsigned char> static const std::vector<T> toBinary(const std::vector<_bT> _source)
     {
-        std::vector<bool> _binResult;
+        std::vector<T> _binResult;
         for (_bT c : _source)
         {
             for (int i{7}; i >= 0; --i)
@@ -32,7 +34,7 @@ class ByteHelper {
      * @param _source source data
      * @param _dest destination object
      */
-    template <typename _bT> static void toBinary(const std::vector<_bT> &_source, std::vector<bool> &_dest)
+    template <typename _bT = char> static void toBinary(const std::vector<_bT> &_source, std::vector<T> &_dest)
     {
         _dest = toBinary(_source);
     };
@@ -45,7 +47,7 @@ class ByteHelper {
      * @param _source data
      * @return const std::vector<_rT> 
      */
-    template <typename _bT, typename _rT>
+    template <typename _bT = bool, typename _rT = unsigned char>
     static const std::vector<_rT> toAscii(const std::vector<_bT> _source)
     {
         if (_source.empty() || _source.size() % 8 != 0)
@@ -73,7 +75,7 @@ class ByteHelper {
      * @param _source source data
      * @param _dest destination object
      */
-    template <typename _bT, typename _rT>
+    template <typename _bT = bool, typename _rT = unsigned char>
     static void toAscii(const std::vector<_bT> &_source, std::vector<_rT> &_dest)
     {
         _dest = toAscii(_source);
@@ -86,12 +88,12 @@ class ByteHelper {
      * @param _source 
      * @return const std::vector<char> 
      */
-    template <typename _bT> static const std::vector<char> toHex(const std::vector<_bT> &_source)
+    template <typename _bT = bool> static const std::vector<unsigned char> binToHex(const std::vector<_bT> &_source)
     {
         if (_source.empty() || _source.size() % 4 != 0)
             return {};
 
-        std::vector<char> result;
+        std::vector<unsigned char> result;
         for (std::size_t i = 0; i < _source.size(); i += 4)
         {
             unsigned int hexValue = 0;
@@ -122,10 +124,10 @@ class ByteHelper {
      * @param _source 
      * @param _dest 
      */
-    template <typename _bT>
-    static void toHex(const std::vector<_bT> &_source, std::vector<char> &_dest)
+    template <typename _bT = bool>
+    static void binToHex(const std::vector<_bT> &_source, std::vector<unsigned char> &_dest)
     {
-        _dest = toHex(_source);
+        _dest = binToHex(_source);
     };
 
     /**
@@ -135,7 +137,7 @@ class ByteHelper {
      * @param _source 
      * @return const std::string 
      */
-    template <typename _bT> static const std::string toByteString(const std::vector<_bT> _source)
+    template <typename _bT = bool> static const std::string toByteString(const std::vector<_bT> _source)
     {
         if (_source.empty())
             return "";
@@ -161,7 +163,7 @@ class ByteHelper {
      * @param _source 
      * @return const std::vector<_bT> 
      */
-    template <typename _bT> static const std::vector<_bT> toByteArray(const std::string _source)
+    template <typename _bT = unsigned char> static const std::vector<_bT> toByteArray(const std::string _source)
     {
         if (_source.empty())
             return {};
@@ -201,15 +203,15 @@ class ByteHelper {
  * Additional padding(0s) is added to the data to make sure it matches the key size.
  *
  */
-template <typename cT> class DES_Encryption: public ByteHelper
+class DES_Encryption: public ByteHelper<bool>
 {
 
 #define _S_BOX_SIZE (std::uint16_t)8u // number of substitution boxes
 #define _S_BOX_ROWS (std::uint16_t)4u // number of rows within each S-box
 #define _S_BOX_COLS (std::uint16_t)16u // number of columns within each S-box
 
-    typedef std::vector<cT> _vectorT; // type definition of container used for bit manipulation
-    typedef std::vector<std::vector<cT>> _mVectorT;
+    typedef std::vector<bool> _vectorT; // type definition of container used for bit manipulation
+    typedef std::vector<std::vector<bool>> _mVectorT;
 
     /**
      * @brief Structure containing left and right halves.
@@ -239,6 +241,11 @@ template <typename cT> class DES_Encryption: public ByteHelper
     };
 
   public:
+
+  typedef std::vector<bool> tBitStream;
+
+
+
     std::uint32_t id = 0; // used only to identify the object, used within copy/move constructors
 
     /**
