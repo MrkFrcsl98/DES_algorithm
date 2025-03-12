@@ -1,3 +1,287 @@
+//
+        // --------------------------------------
+        //            DES BLOCK CIPHER
+        // --------------------------------------
+        // DATA-ENCRYPTION-STANDARD(DES) Cryptosystem
+        //
+        // The Data Encryption Standard (DES) is a symmetric block cipher that was widely used for
+        // data encryption. Developed by IBM, DES operates on 64-bit blocks of plaintext and
+        // utilizes a 56-bit key for encryption, derived from a 64-bit key where 8 bits are used for
+        // parity checks.
+
+        // DES employs a Feistel network structure, which divides the plaintext into two halves and
+        // processes them through a series of operations over multiple rounds. Specifically, DES
+        // performs 16 rounds of encryption, each using a unique subkey generated from the original
+        // key through a key scheduling mechanism. This mechanism involves permutation and rotation
+        // to ensure that each subkey is distinct, enhancing security.
+
+        // During each round of encryption, the plaintext is split into a left half (L) and a right
+        // half (R). The right half is expanded using a permutation to match the size of the subkey,
+        // resulting in a 48-bit value. This expanded right half is then XORed with the subkey for
+        // that round. The result is passed through a series of substitution boxes (S-boxes), which
+        // perform a nonlinear transformation on the data. The output of the S-boxes is then
+        // permuted using another permutation known as the P-box.
+
+        // After processing, the left and right halves are swapped, and the process is repeated for
+        // the next round. After the final round, the left and right halves are combined and passed
+        // through a final permutation known as the Inverse Initial Permutation (IP-1) to produce
+        // the ciphertext.
+
+        // The strength of DES lies in its complexity and the multiple rounds it performs. With 16
+        // rounds and a 56-bit key, there are a total of 2^56 possible keys, which was once
+        // considered to make brute-force attacks impractical. However, due to advances in computing
+        // power, DES is now regarded as insecure for modern encryption needs.
+
+        // DES follows the principles of confusion and diffusion, as defined by the cryptographer
+        // Claude Shannon. Confusion obscures the relationship between the plaintext and the
+        // ciphertext, often achieved through substitution tables like the S-boxes. Diffusion
+        // ensures that changes in the plaintext result in significant changes in the ciphertext,
+        // which is accomplished through operations like permutation and mixing of bits. This
+        // spreading effect is known as the avalanche effect, where a small change in the input
+        // (such as flipping a single bit) leads to substantial changes in the output.
+
+        // The "f" function is a crucial component of each round in the DES encryption process. It
+        // takes a 32-bit input and a 48-bit key, performing various mathematical operations,
+        // including permutations, substitutions, and XOR operations, to produce a 32-bit output.
+        // The output of the "f" function is combined with the left half of the block, and the two
+        // halves are then swapped.
+
+        // It is important to note that during the encryption process, the left half (L0) is
+        // modified by XORing it with the output of the "f" function, while the right half (R0)
+        // remains unchanged until the swap occurs. This means that the output of the encryption
+        // process (R1) is equal to R0.
+
+        // The initial step in the encryption process is the Initial Permutation (IP), which
+        // rearranges the input data (the 64-bit plaintext) by copying specific bits from one
+        // position to another. This rearranging process is applied before the rounds of encryption
+        // begin. After the final round, the final permutation (IP-1) is applied, effectively
+        // restoring the data to its original order.
+
+        // The inclusion of the initial permutation was primarily introduced for practical
+        // electrical engineering reasons rather than cryptographic security. It addressed specific
+        // challenges in data transfer within the chip but does not significantly impact the speed
+        // or security of the algorithm.
+
+        // To increase the complexity of DES, an expansion box is used, which takes a 32-bit input
+        // (R) and produces a 48-bit output. Following this, the expanded input is XORed with a
+        // subkey derived from the original key, adding another layer of complexity to the
+        // encryption process.
+
+        // The S-boxes are a critical part of the "f" function, with a total of 8 S-boxes in the DES
+        // encryption process. Each S-box takes in 6 bits and outputs 4 bits, introducing
+        // non-linearity to the algorithm and making it more resistant to attacks. The S-boxes can
+        // be viewed as lookup tables, where the first 4 bits of the input select one of the 16
+        // columns, and the last 2 bits select one of the 4 rows to determine the output value.
+
+        // In 1990, researchers Adi Shamir and Eli Biham discovered a technique called differential
+        // cryptanalysis, which exploits the structure of S-boxes to analyze the differences in
+        // output when small changes are made to the input. This discovery highlighted
+        // vulnerabilities in DES, further contributing to its decline in security for modern
+        // applications.
+
+        // **Encryption Process:**
+
+        // Initial Permutation (IP): The 64-bit plaintext undergoes an initial permutation,
+        // rearranging the bits according to a predefined table.
+
+        // Key Scheduling: The 64-bit key is processed to generate 16 subkeys, each 48 bits long,
+        // through a key scheduling mechanism that involves permutation and rotation.
+
+        // Rounds: The main encryption process consists of 16 rounds, where each round involves
+        // the following steps:
+
+        // Split the Data: The permuted input is divided into two halves: the left half (L0)
+        // and the right half (R0).
+
+        // Expansion: The right half (R0) is expanded from 32 bits to 48 bits using an expansion
+        // permutation, preparing it for the XOR operation with the subkey.
+
+        // Key XOR: The expanded right half is XORed with the current round's subkey, producing
+        // an intermediate result.
+
+        // S-Box Substitution: The result is passed through 8 S-boxes, each taking 6 bits of
+        // input and producing 4 bits of output. This introduces non-linearity into the encryption.
+
+        // Permutation (P-Box): The output from the S-boxes is permuted using a P-box, further
+        // scrambling the bits.
+
+        // Combine and Swap: The output of the P-box is XORed with the left half (L0) to produce
+        // the new left half (L1). The right half (R0) remains unchanged until the swap occurs.
+
+        // Swap: After processing, the left and right halves are swapped for the next round.
+
+        // Final Permutation (IP-1): After completing all 16 rounds, the left and right halves are
+        // combined and passed through the final permutation (IP-1), producing the ciphertext.
+
+        // **Decryption Process:**
+
+        // Initial Permutation (IP): The ciphertext undergoes the same initial permutation as in
+        // encryption, rearranging the bits.
+
+        // Key Scheduling: The same 64-bit key is used to generate the 16 subkeys, but they are
+        // applied in reverse order during decryption.
+
+        // Rounds: The decryption process also consists of 16 rounds, with the following steps:
+
+        // Split the Data: The permuted input is divided into two halves: the left half (L0)
+        // and the right half (R0).
+
+        // Expansion: The right half (R0) is expanded from 32 bits to 48 bits using the same
+        // expansion permutation.
+
+        // Key XOR: The expanded right half is XORed with the current round's subkey (used in
+        // reverse order), producing an intermediate result.
+
+        // S-Box Substitution: The result is passed through the same 8 S-boxes, producing 4 bits
+        // of output.
+
+        // Permutation (P-Box): The output from the S-boxes is permuted using the same P-box.
+
+        // Combine and Swap: The output of the P-box is XORed with the left half (L0) to produce
+        // the new left half (L1). The right half (R0) remains unchanged until the swap occurs.
+
+        // Swap: After processing, the left and right halves are swapped for the next round.
+
+        // Final Permutation (IP-1): After completing all 16 rounds, the left and right halves are
+        // combined and passed through the final permutation (IP-1), resulting in the original
+        // plaintext.
+
+        // In summary, the encryption and decryption processes of DES are symmetric, with the same
+        // operations applied in reverse order during decryption, utilizing the same key and
+        // subkeys.
+
+        // The S-boxes are structured as follows:
+
+        // S1:
+        // 00 01 10 11 00 01 10 11
+        // 01 10 11 00 10 01 00 11
+        // 10 00 01 11 01 10 00 01
+        // 11 10 01 00 01 11 10 00
+
+        // S2:
+        // 01 00 11 10 00 01 10 11
+        // 11 10 01 00 01 11 10 00
+        // 10 01 00 11 01 10 00 01
+        // 00 11 10 01 10 00 01 11
+
+        // S3:
+        // 10 00 01 11 01 10 00 01
+        // 11 10 01 00 01 11 10 00
+        // 00 01 10 11 00 01 10 11
+        // 01 10 11 00 10 01 00 11
+
+        // S4:
+        // 00 01 10 11 10 00 01 11
+        // 01 10 11 00 10 01 00 11
+        // 11 00 01 10 01 11 10 00
+        // 10 01 00 11 00 10 11 01
+
+        // S5:
+        // 01 10 00 11 10 01 11 00
+        // 00 01 10 11 01 10 00 01
+        // 11 00 01 10 10 01 00 11
+        // 10 11 00 01 01 10 11 00
+
+        // S6:
+        // 11 00 01 10 10 01 00 11
+        // 01 10 00 11 10 01 11 00
+        // 00 01 10 11 01 10 00 01
+        // 10 11 00 01 11 00 01 10
+
+        // S7:
+        // 00 01 10 11 01 10 00 01
+        // 11 10 01 00 10 01 11 00
+        // 10 00 01 11 00 01 10 11
+        // 01 10 11 00 11 01 10 00
+
+        // S8:
+        // 11 10 01 00 01 11 10 00
+        // 10 00 01 11 00 01 10 11
+        // 01 10 00 11 10 01 11 00
+        // 00 01 10 11 01 10 00 01
+
+        // The S-tables are structured as follows:
+
+        // S1:
+        // Row 0: 14  4  13  1  2  15  11  8
+        // Row 1:  3 10  6  9  0  7  5 12
+        // Row 2:  0 15  7  4 14  2 13  1
+        // Row 3: 10  6 12 11  9  5  3  8
+        // Row 4:  9 14  15  5  2  8 12  3
+        // Row 5:  7  0  4 10  1 13 11  6
+        // Row 6:  4  3  2 12  9  6 10  5
+        // Row 7: 11  1 10  7 13 14  0  3
+
+        // S2:
+        // Row 0: 15  1  8 14  6 11  3  4
+        // Row 1:  9  7  2 13 12  0  5 10
+        // Row 2:  3 13  4  7 15  2  8 14
+        // Row 3: 12  0  1 10  6  9 11  5
+        // Row 4:  7 11  4  1  9 12 14  2
+        // Row 5:  0  6 10 13 15  3  5  8
+        // Row 6:  4  2  1 11 10  7  6  0
+        // Row 7: 13  9  8  3  5 14 12 15
+
+        // S3:
+        // Row 0: 10  0  9 14  6  3 15  5
+        // Row 1:  1 13  2  8  7  4 12 11
+        // Row 2:  7 13 14  3  0  6  9 10
+        // Row 3:  1  2  8  5 11 12  4 15
+        // Row 4:  2 12  4  1  7 10 11  6
+        // Row 5:  8  5  3 15 13  0 14  9
+        // Row 6:  3  9  5 14 12  7  0  1
+        // Row 7:  6 10 11  4 15  2  8 13
+
+        // S4:
+        // Row 0:  7 13 14  3  0  6  9 10
+        // Row 1:  1  2  8  5 11 12  4 15
+        // Row 2:  2  1 14  7  4 10  8 13
+        // Row 3: 15  9 12  0  3  5  6 11
+        // Row 4: 12  5  6 11 10  0  3  9
+        // Row 5:  7 13  4  1  2 14 15  8
+        // Row 6:  4  3  2 12  9  6 10  5
+        // Row 7: 11  1 10  7 13 14  0  3
+
+        // S5:
+        // Row 0:  1 10  0 11 10  1 11  0
+        // Row 1:  0  1 10 11  01 10  0  1
+        // Row 2: 11  0  1 10 10  1  0 11
+        // Row 3:  1  0  0 11  1  1  0  1
+        // Row 4:  0  1  1 10  1  0  1 11
+        // Row 5:  1  0  0 11  1  1  0  1
+        // Row 6:  1  1  0  0  1  0  1 10
+        // Row 7:  0  1  1  0  1  1  0  1
+
+        // S6:
+        // Row 0:  11  0  1 10 10  1  0 11
+        // Row 1:  01 10  0 11 10  1 11  0
+        // Row 2:  00  1 10 11  01 10  0  1
+        // Row 3:  10 11  0  1  11  0  1 10
+        // Row 4:  10  1  0  0  1  0  1 10
+        // Row 5:  01  1  0  0  1  1  0  1
+        // Row 6:  10  0  1  1  0  1  1  0
+        // Row 7:  01  1  0  0  1  0  1 10
+
+        // S7:
+        // Row 0:  00  01 10 11 01 10 00 01
+        // Row 1:  11 10  01 00 10 01 11 00
+        // Row 2:  10 00  01 11 00 01 10 11
+        // Row 3:  01 10 11 00 11 01 10 00
+        // Row 4:  01 10 00 11 10 01 11 00
+        // Row 5:  00 01 10 11 01 10 00 01
+        // Row 6:  11 10  01 00 10 01 11 00
+        // Row 7:  10 00  01 11 00 01 10 11
+
+        // S8:
+        // Row 0:  11 10  01 00 01 11 10 00
+        // Row 1:  10 00  01 11 00 01 10 11
+        // Row 2:  01 10 00 11 10 01 11 00
+        // Row 3:  00 01 10 11 01 10 00 01
+        // Row 4:  01 11 10 00 00 01 10 11
+        // Row 5:  10 00  01 11 00 01 10 11
+        // Row 6:  11 10  01 00 01 11 10 00
+        // Row 7:  10 00  01 11 00 01 10 11
+
 namespace DES {
 
 template <typename T>
