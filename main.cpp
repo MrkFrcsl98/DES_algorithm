@@ -4,17 +4,27 @@
 
 int main() {
   
-  std::string message = "hello"; // message
-  std::string key = "12345678"; // key, must be at least 64bit long, if size exceeds 64bits(8 bytes) it will be truncated
+using namespace DES;
 
-  DES::DES_Encryption<bool> DES(key); // DES init
-  
-  /** ENCRYPTION **/
-  std::vector<bool> encrypted = DES.Encrypt(DES::DES_Encryption<bool>::toBinary(DES::DES_Encryption<bool>::toByteArray<char>(message)));
-  std::cout << "Encrypted: " << DES::DES_Encryption<bool>::toByteString<char>(DES::DES_Encryption<bool>::toHex<bool>(encrypted))<< "\n";
+            /** PREPARE DATA **/
+            std::string message = "hello";
+            std::string key = "12345678";
+            
+            std::vector<std::uint8_t> byte_array = DES_Encryption::toByteArray(message);
+            DES_Encryption::tBitStream binary_message = DES_Encryption::toBinary(byte_array);
 
-  /** DECRYPTION **/
-  std::vector<bool> decrypted = DES.Decrypt(encrypted);
-  std::cout << "Decrypted: "<< DES::DES_Encryption<bool>::toByteString<char>(DES::DES_Encryption<bool>::toAscii<bool, char>(decrypted))<< "\n";
+            DES::DES_Encryption DES(key);
+
+            /** ENCRYPTION **/
+            DES_Encryption::tBitStream encrypted = DES.Encrypt(binary_message);
+            std::vector<std::uint8_t> toHex = DES_Encryption::binToHex(encrypted);
+            std::string toString = DES_Encryption::toByteString(toHex);
+            std::cout << "Encrypted: " << toString << "\n";
+
+            /** DECRYPTION **/
+            DES_Encryption::tBitStream decrypted = DES.Decrypt(encrypted);
+            std::vector<unsigned char> decryptedAscii = DES_Encryption::toAscii(decrypted);
+            std::string dAsciiString = DES_Encryption::toByteString(decryptedAscii);
+            std::cout << "Decrypted: "<< dAsciiString << "\n";
         
 }
