@@ -92,6 +92,8 @@ using namespace DES;
 ```
 
 
+![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/lpdsdspldpsldpsdsds.jpg?raw=true)
+
 ![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/fewafjewropiewrpewrww.jpg?raw=true)
 ```cpp
         // --------------------------------------
