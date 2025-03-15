@@ -1,7 +1,8 @@
 # DES Encryption Implementation
-![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/fewafjewropiewrpewrww.jpg?raw=true)
 
 ## Overview
+
+![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/ewpoierwewoepowepw.jpg?raw=true)
 
 This project provides a C++ implementation of the Data Encryption Standard (DES) algorithm. DES is a symmetric-key block cipher that encrypts data in 64-bit blocks using a 56-bit key. Although DES is considered obsolete due to its vulnerability to modern attacks, this implementation serves as an educational tool to understand the principles of symmetric encryption and the workings of the DES algorithm.
 
@@ -91,6 +92,7 @@ using namespace DES;
 ```
 
 
+![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/fewafjewropiewrpewrww.jpg?raw=true)
 ```cpp
         // --------------------------------------
         //            DES BLOCK CIPHER
