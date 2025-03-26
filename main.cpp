@@ -1,9 +1,10 @@
 // include standard headers...
 
-#include<des.cpp>
+#include "des.hpp"
 
 int main() {
-  
+
+  #ifdef _DES_ENCRYPTION_ALGO_
 using namespace DES;
 
             /** PREPARE DATA **/
@@ -26,5 +27,5 @@ using namespace DES;
             std::vector<unsigned char> decryptedAscii = DES_Encryption::toAscii(decrypted);
             std::string dAsciiString = DES_Encryption::toByteString(decryptedAscii);
             std::cout << "Decrypted: "<< dAsciiString << "\n";
-        
+    #endif
 }
