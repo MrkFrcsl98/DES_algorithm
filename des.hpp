@@ -1,20 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h> 
-
-#include <algorithm>
-#include <array>
-#include <bitset>
-#include <cerrno>
 #include <chrono>
-#include <cmath>
-#include <cstring>
-#include <ctime>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -22,8 +6,9 @@
 
 namespace DES {
 
-template <typename T> class ByteHelper {
-public:
+template <typename T>
+class ByteHelper {
+ public:
   explicit ByteHelper() noexcept {};
   ~ByteHelper() noexcept {};
 
@@ -34,13 +19,13 @@ public:
    * @param _source source data
    * @return const _vectorT
    */
-  template <typename _bT = unsigned char> static const std::vector<T> toBinary(const std::vector<_bT> _source) {
-    std::vector<T> _binResult;
-    for (_bT c : _source) {
-      for (int i{7}; i >= 0; --i) {
-        _binResult.push_back((c & (1 << i)) ? 1 : 0);
-      }
-    }
+  template <typename _bT = unsigned char>
+  inline static constexpr std::vector<T> toBinary(const std::vector<_bT>& _source) noexcept {
+    std::vector<T> _binResult(_source.size() * 8);
+    std::size_t counter{0};
+    for (_bT c : _source)
+      for (int i{7}; i >= 0; --i, counter++)
+        _binResult[counter] = ((c & (1 << i)) ? 1 : 0);
     return _binResult;
   };
 
@@ -51,7 +36,10 @@ public:
    * @param _source source data
    * @param _dest destination object
    */
-  template <typename _bT = char> static void toBinary(const std::vector<_bT> &_source, std::vector<T> &_dest) { _dest = toBinary(_source); };
+  template <typename _bT = char>
+  inline static void toBinary(const std::vector<_bT>& _source, std::vector<T>& _dest) noexcept {
+    _dest = toBinary(_source);
+  };
 
   /**
    * @brief convert to ascii
@@ -61,10 +49,12 @@ public:
    * @param _source data
    * @return const std::vector<_rT>
    */
-  template <typename _bT = bool, typename _rT = unsigned char> static const std::vector<_rT> toAscii(const std::vector<_bT> _source) {
-    if (_source.empty() || _source.size() % 8 != 0)
+  template <typename _bT = bool, typename _rT = unsigned char>
+  inline static constexpr std::vector<_rT> toAscii(const std::vector<_bT>& _source) noexcept {
+    if (_source.empty() || _source.size() % 8 != 0) [[unlikely]]
       return {};
     std::vector<_rT> result(_source.size() / 8);
+    std::size_t counter{0};
     for (std::size_t i{0}; i < _source.size(); i += 8) {
       char c = 0;
       for (int j{0}; j < 8; ++j) {
@@ -72,7 +62,7 @@ public:
         if (_source[i + j] == 1)
           c |= 1;
       }
-      result.push_back(static_cast<char>(c));
+      result[counter++] = c;
     }
     return result;
   };
@@ -85,7 +75,10 @@ public:
    * @param _source source data
    * @param _dest destination object
    */
-  template <typename _bT = bool, typename _rT = unsigned char> static void toAscii(const std::vector<_bT> &_source, std::vector<_rT> &_dest) { _dest = toAscii(_source); };
+  template <typename _bT = bool, typename _rT = unsigned char>
+  inline static void toAscii(const std::vector<_bT>& _source, std::vector<_rT>& _dest) noexcept {
+    _dest = toAscii(_source);
+  };
 
   /**
    * @brief convert data to hex
@@ -94,10 +87,11 @@ public:
    * @param _source
    * @return const std::vector<char>
    */
-  template <typename _bT = bool> static const std::vector<unsigned char> binToHex(const std::vector<_bT> &_source) {
-    if (_source.empty() || _source.size() % 4 != 0)
+  template <typename _bT = bool>
+  inline static constexpr std::vector<unsigned char> binToHex(
+      const std::vector<_bT>& _source) noexcept {
+    if (_source.empty() || _source.size() % 4 != 0) [[unlikely]]
       return {};
-
     std::vector<unsigned char> result;
     for (std::size_t i = 0; i < _source.size(); i += 4) {
       unsigned int hexValue = 0;
@@ -123,7 +117,11 @@ public:
    * @param _source
    * @param _dest
    */
-  template <typename _bT = bool> static void binToHex(const std::vector<_bT> &_source, std::vector<unsigned char> &_dest) { _dest = binToHex(_source); };
+  template <typename _bT = bool>
+  inline static void binToHex(const std::vector<_bT>& _source,
+                              std::vector<unsigned char>& _dest) noexcept {
+    _dest = binToHex(_source);
+  };
 
   /**
    * @brief convert from vector container to character sequence
@@ -132,8 +130,9 @@ public:
    * @param _source
    * @return const std::string
    */
-  template <typename _bT = bool> static const std::string toByteString(const std::vector<_bT> _source) {
-    if (_source.empty())
+  template <typename _bT = bool>
+  inline static constexpr std::string toByteString(const std::vector<_bT>& _source) noexcept {
+    if (_source.empty()) [[unlikely]]
       return "";
     std::string out;
     out.resize(_source.size());
@@ -157,12 +156,14 @@ public:
    * @param _source
    * @return const std::vector<_bT>
    */
-  template <typename _bT = unsigned char> static const std::vector<_bT> toByteArray(const std::string _source) {
-    if (_source.empty())
+  template <typename _bT = unsigned char>
+  inline static constexpr std::vector<_bT> toByteArray(const std::string& _source) noexcept {
+    if (_source.empty()) [[unlikely]]
       return {};
     std::vector<_bT> out(_source.size());
+    std::size_t counter{0};
     for (const auto b : _source) {
-      out.push_back(b);
+      out[counter++] = b;
     }
     return out;
   };
@@ -195,12 +196,11 @@ public:
  *
  */
 class DES_Encryption : public ByteHelper<bool> {
+#define SBSZ (std::uint16_t)0x08  // number of substitution boxes
+#define SBR (std::uint16_t)0x04   // number of rows within each S-box
+#define SBC (std::uint16_t)0x10   // number of columns within each S-box
 
-#define _S_BOX_SIZE (std::uint16_t)8u  // number of substitution boxes
-#define _S_BOX_ROWS (std::uint16_t)4u  // number of rows within each S-box
-#define _S_BOX_COLS (std::uint16_t)16u // number of columns within each S-box
-
-  typedef std::vector<bool> _vectorT; // type definition of container used for bit manipulation
+  typedef std::vector<bool> _vectorT;  // type definition of container used for bit manipulation
   typedef std::vector<std::vector<bool>> _mVectorT;
 
   /**
@@ -214,7 +214,7 @@ class DES_Encryption : public ByteHelper<bool> {
       l.resize(_s);
       r.resize(_s);
     };
-    __attribute__((cold)) _Halves(const _Halves &_copy) noexcept {
+    __attribute__((cold)) _Halves(const _Halves& _copy) noexcept {
       l.resize(_copy.l.size());
       r.resize(_copy.r.size());
       l = _copy.l;
@@ -226,10 +226,10 @@ class DES_Encryption : public ByteHelper<bool> {
     };
   };
 
-public:
+ public:
   typedef std::vector<bool> tBitStream;
 
-  std::uint32_t id = 0; // used only to identify the object, used within copy/move constructors
+  std::uint32_t id = 0;  // used only to identify the object, used within copy/move constructors
 
   /**
    * @brief Construct a new des encryption object
@@ -242,9 +242,9 @@ public:
    *
    * @param _copy
    */
-  DES_Encryption(const DES_Encryption &_copy) noexcept {
+  DES_Encryption(const DES_Encryption& _copy) noexcept {
     this->_initObjectState();
-    if (*this != _copy) {
+    if (*this != _copy) [[likely]] {
       this->__subkeys = _copy.getSubkeys();
     }
   };
@@ -254,14 +254,16 @@ public:
    *
    * @param _copy
    */
-  DES_Encryption(DES_Encryption &&_copy) noexcept {
+  DES_Encryption(DES_Encryption&& _copy) noexcept {
     this->_initObjectState();
-    if (*this != _copy) {
+    if (*this != _copy) [[likely]] {
       this->__subkeys = std::move(_copy.getSubkeys());
     }
   };
 
-  const bool operator!=(const DES_Encryption &_copy) noexcept { return (this->id != _copy.id); };
+  inline const bool operator!=(const DES_Encryption& _copy) noexcept {
+    return (this->id != _copy.id);
+  };
 
   /**
    * @brief Destroy the des encryption object
@@ -281,14 +283,14 @@ public:
    *
    * @param _key
    */
-  explicit DES_Encryption(const std::string &_key) { this->_initialization(_key); };
+  explicit DES_Encryption(const std::string& _key) noexcept { this->_initialization(_key); };
 
   /**
    * @brief Get the Subkeys vector
    *
    * @return const _mVectorT&
    */
-  const _mVectorT &getSubkeys() const noexcept { return this->__subkeys; };
+  inline const _mVectorT& getSubkeys() const noexcept { return this->__subkeys; };
 
   /**
    * @brief Encryption function. The first operation after key scheduling, is
@@ -302,12 +304,15 @@ public:
    * @param _source input
    * @return const _vectorT
    */
-  const _vectorT Encrypt(_vectorT _source) {
+  const _vectorT Encrypt(const _vectorT& _source) {
     _vectorT _out;
-    this->_64bitPadding(_source);
-    for (std::size_t i{0}; i < _source.size(); i += this->_MAIN_KEY_SIZE) {
-      _vectorT _block(_source.begin() + i, _source.begin() + i + this->_MAIN_KEY_SIZE);
-      _vectorT _encryptedBlock(this->_MAIN_KEY_SIZE);
+    if (_source.size() == 0) [[unlikely]]
+      return _out;
+    _vectorT source(_source);
+    this->_PKCS7PaddingInjection(source);
+    for (std::size_t i{0}; i < source.size(); i += this->_KeySize) {
+      _vectorT _block(source.begin() + i, source.begin() + i + this->_KeySize);
+      _vectorT _encryptedBlock(this->_KeySize);
       this->_64bitBlockETransformation(_block, _encryptedBlock);
       _out.insert(_out.end(), _encryptedBlock.begin(), _encryptedBlock.end());
     }
@@ -320,7 +325,7 @@ public:
    * @param _source
    * @param _dest
    */
-  void Encrypt(_vectorT &_source, _vectorT &_dest) { _dest = this->Encrypt(_source); };
+  void Encrypt(const _vectorT& _source, _vectorT& _dest) { _dest = this->Encrypt(_source); };
 
   /**
    * @brief Decrypt _source
@@ -328,22 +333,18 @@ public:
    * @param _source
    * @return const _vectorT
    */
-  const _vectorT Decrypt(_vectorT _source) {
+  const _vectorT Decrypt(const _vectorT& _source) {
     _vectorT _out;
-    for (std::size_t i{0}; i < _source.size(); i += this->_MAIN_KEY_SIZE) {
-      _vectorT _block(_source.begin() + i, _source.begin() + i + this->_MAIN_KEY_SIZE);
-      _vectorT _decryptedBlock(this->_MAIN_KEY_SIZE);
+    if (_source.size() == 0) [[unlikely]]
+      return _out;
+    _vectorT source(_source);
+    for (std::size_t i{0}; i < source.size(); i += this->_KeySize) {
+      _vectorT _block(source.begin() + i, source.begin() + i + this->_KeySize);
+      _vectorT _decryptedBlock(this->_KeySize);
       this->_64bitBlockDTransformation(_block, _decryptedBlock);
       _out.insert(_out.end(), _decryptedBlock.begin(), _decryptedBlock.end());
     }
-    auto to_string_bytes = toAscii(_out);
-    int back = to_string_bytes.back();
-    while (!to_string_bytes.empty() && ((int)to_string_bytes.back() == back)) {
-      to_string_bytes.pop_back();
-    }
-
-    _out = toBinary(to_string_bytes);
-
+    this->_PKCS7PaddingEjection(_out);
     return _out;
   };
 
@@ -353,20 +354,34 @@ public:
    * @param _source
    * @param _dest
    */
-  void Decrypt(_vectorT &_source, _vectorT &_dest) { _dest = this->Decrypt(_source); };
+  void Decrypt(const _vectorT& _source, _vectorT& _dest) { _dest = this->Decrypt(_source); };
 
-private:
-  inline void _64bitPadding(_vectorT &_source) {
-    if (_source.empty())
+ private:
+  __attribute__((cold, always_inline)) inline void _PKCS7PaddingInjection(
+      _vectorT& _source) noexcept {
+    if (_source.empty()) [[unlikely]]
       return;
-    std::size_t padding_size = this->_MAIN_KEY_SIZE - (_source.size() % this->_MAIN_KEY_SIZE);
-    for (std::size_t i = 0; i < padding_size; ++i) {
-      _source.push_back((int)padding_size);
-    }
+    const std::uint8_t padv{
+        static_cast<std::uint8_t>(this->_KeySize - (_source.size() % this->_KeySize))};
+    const std::uint8_t padding_size = padv == this->_KeySize ? (std::uint8_t)this->_KeySize : padv;
+    for (std::uint8_t i = 0; i < padding_size; ++i)
+      _source.push_back(static_cast<std::uint8_t>(padding_size));
   };
 
-  inline void _initialization(const std::string &_key) {
-    if (_key.empty())
+  __attribute__((cold, always_inline)) inline void _PKCS7PaddingEjection(
+      _vectorT& _source) noexcept {
+    if (_source.empty()) [[unlikely]]
+      return;
+    std::vector<unsigned char> to_string_bytes(toAscii(_source));
+    const std::uint8_t back{to_string_bytes.back()};
+    while (!to_string_bytes.empty() && ((int)to_string_bytes.back() == back)) {
+      to_string_bytes.pop_back();
+    }
+    _source = toBinary(to_string_bytes);
+  };
+
+  __attribute__((cold, always_inline)) inline void _initialization(const std::string& _key) {
+    if (_key.empty()) [[unlikely]]
       throw std::invalid_argument("Invalid key value!");
     this->_initObjectState();
     this->_generateSubkeys(this->_convertKeyStr2Binary(_key.size() > 8 ? _key.substr(0, 8) : _key));
@@ -392,16 +407,14 @@ private:
    * @param _vectorT& 64-bit key(MAIN)
    *
    */
-  __attribute__((stack_protect, noinline)) void _generateSubkeys(const _vectorT &_key) {
-    try {
-      if (_key.size() != this->_MAIN_KEY_SIZE) {
-        throw std::range_error("_key size do not match max bits allowed, _key size = " + std::to_string(_key.size()) + ", max allowed = " + std::to_string(this->_KEY_BITS));
-      }
-      const _vectorT pk(this->_initPermutation(_key));
-      this->_keyScheduling(pk);
-    } catch (const std::exception &_e) {
-      std::cerr << "Error: " << _e.what() << "\n";
+  __attribute__((stack_protect)) void _generateSubkeys(const _vectorT& _key) {
+    if (_key.size() != this->_KeySize) [[unlikely]] {
+      throw std::range_error(
+          "_key size do not match max bits allowed, _key size = " + std::to_string(_key.size()) +
+          ", max allowed = " + std::to_string(this->_KeyBits));
     }
+    const _vectorT pk(this->_initPermutation(_key));
+    this->_keyScheduling(pk);
   };
 
   /**
@@ -416,9 +429,9 @@ private:
    *
    * @param _permuted_key
    */
-  inline void _keyScheduling(const _vectorT &_permuted_key) {
+  __attribute__((cold, always_inline)) inline void _keyScheduling(const _vectorT& _permuted_key) {
     struct _Halves halves(this->_28bitKeyPartition(_permuted_key));
-    for (std::uint16_t r{0}; r < this->_EXEC_ROUNDS; ++r) {
+    for (std::uint16_t r{0}; r < this->_Rounds; ++r) {
       this->_keyRotation(halves, r);
       this->__subkeys.push_back(this->_compressionPermutation(halves));
     }
@@ -428,8 +441,8 @@ private:
    * @brief generate id for object id
    *
    */
-  inline void _initObjectState(void) noexcept {
-    if (this->id == 0) {
+  __attribute__((cold, always_inline)) inline void _initObjectState(void) noexcept {
+    if (this->id == 0) [[likely]] {
       std::uint64_t state = std::time(nullptr);
       state ^= state << 13;
       state ^= state >> 7;
@@ -460,79 +473,75 @@ private:
    * The newly permuted bitstream is then XORed with the L-half block to generate R1
    * and then the left and right halves are swapped.
    * After halves swapping, L and R are combined, and the combined bitstream goes through
-   * a final permutation(P-1), which uses the inverse IP-table, and generates the final output(ciphertext).
+   * a final permutation(P-1), which uses the inverse IP-table, and generates the final
+   * output(ciphertext).
    *
    * @param _64bitBlock
    * @param _subkeys
    * @param _output
    */
-  void _64bitBlockETransformation(const _vectorT &_64bitBlock, _vectorT &_output) {
-    try {
-      if (_64bitBlock.size() != 64) [[unlikely]] {
-        throw std::invalid_argument("block size must be multiple of 64!");
-      }
-      _vectorT _block_permutation = this->_64bitBlockPermutation(_64bitBlock);
-      if (_block_permutation.size() != _MAIN_KEY_SIZE) [[unlikely]] {
-        throw std::invalid_argument("P-Block must be in 64-bit size!");
-      }
-      struct _Halves halves = this->_64bitBlockPartition(_block_permutation);
-      for (std::uint16_t r{0}; r < this->_EXEC_ROUNDS; ++r) {
-        if (halves.r.size() != _PERM_INP_HALF_SIZE) [[unlikely]] {
-          throw std::invalid_argument("R0 half size error, not a 32-bit block!");
-        }
-        _vectorT _expanded(this->_expansionPermutation(halves.r));
-        _vectorT _mixed(this->_keyMixing(_expanded, r));
-        _vectorT _sBoxOut(this->_sBoxSubstitution(_mixed));
-        _vectorT _permuted(this->_pPermutation(_sBoxOut));
-        _vectorT _R1(_PERM_INP_HALF_SIZE);
-        for (std::uint16_t i{0}; i < _R1.size(); ++i) {
-          _R1[i] = halves.l[i] ^ _permuted[i];
-        }
-        halves.l = halves.r;
-        halves.r = _R1;
-      }
-      _vectorT _combined(this->_MAIN_KEY_SIZE);
-      for (std::uint16_t i{0}; i < _combined.size() / 2; ++i) {
-        _combined[i] = halves.r[i];
-        _combined[i + (_combined.size() / 2)] = halves.l[i];
-      }
-      _output = this->_finalPermutation(_combined);
-    } catch (const std::exception &_e) {
-      std::cerr << "Error: " << _e.what() << "\n";
+  __attribute__((hot, stack_protect)) void _64bitBlockETransformation(const _vectorT& _64bitBlock,
+                                                                      _vectorT& _output) {
+    if (_64bitBlock.size() != 64) [[unlikely]] {
+      throw std::invalid_argument("block size must be multiple of 64!");
     }
+    _vectorT _block_permutation = this->_64bitBlockPermutation(_64bitBlock);
+    if (_block_permutation.size() != _KeySize) [[unlikely]] {
+      throw std::invalid_argument("P-Block must be in 64-bit size!");
+    }
+    struct _Halves halves = this->_64bitBlockPartition(_block_permutation);
+    for (std::uint16_t r{0}; r < this->_Rounds; ++r) {
+      if (halves.r.size() != _HISize) [[unlikely]] {
+        throw std::invalid_argument("R0 half size error, not a 32-bit block!");
+      }
+      _vectorT _expanded(this->_expansionPermutation(halves.r));
+      _vectorT _mixed(this->_keyMixing(_expanded, r));
+      _vectorT _sBoxOut(this->_sBoxSubstitution(_mixed));
+      _vectorT _permuted(this->_pPermutation(_sBoxOut));
+      _vectorT _R1(_HISize);
+      for (std::uint16_t i{0}; i < _R1.size(); ++i) {
+        _R1[i] = halves.l[i] ^ _permuted[i];
+      }
+      halves.l = halves.r;
+      halves.r = _R1;
+    }
+    _vectorT _combined(this->_KeySize);
+    for (std::uint16_t i{0}; i < _combined.size() / 2; ++i) {
+      _combined[i] = halves.r[i];
+      _combined[i + (_combined.size() / 2)] = halves.l[i];
+    }
+    _output = this->_finalPermutation(_combined);
   };
 
-  void _64bitBlockDTransformation(const _vectorT &_64bitBlock, _vectorT &_output) {
-    try {
-      if (_64bitBlock.size() != 64)
-        throw std::invalid_argument("block size invalid!");
-      _vectorT _permuted_input = this->_64bitBlockPermutation(_64bitBlock);
-      struct _Halves halves = this->_64bitBlockPartition(_permuted_input);
-      for (std::uint16_t r = this->_EXEC_ROUNDS - 1; r < this->_EXEC_ROUNDS; --r) {
-        _vectorT _expanded(this->_expansionPermutation(halves.r));
-        _vectorT _mixed(this->_keyMixing(_expanded, r));
-        _vectorT _sBoxOut(this->_sBoxSubstitution(_mixed));
-        _vectorT _permuted(this->_pPermutation(_sBoxOut));
-        _vectorT _R1(this->_MAIN_KEY_SIZE / 2);
-        for (std::uint16_t i{0}; i < _R1.size(); ++i) {
-          _R1[i] = halves.l[i] ^ _permuted[i];
-        }
-        halves.l = halves.r;
-        halves.r = _R1;
+  __attribute__((hot, stack_protect)) void _64bitBlockDTransformation(const _vectorT& _64bitBlock,
+                                                                      _vectorT& _output) {
+    if (_64bitBlock.size() != 64) [[unlikely]]
+      throw std::invalid_argument("block size invalid!");
+    _vectorT _permuted_input = this->_64bitBlockPermutation(_64bitBlock);
+    struct _Halves halves = this->_64bitBlockPartition(_permuted_input);
+    for (std::uint16_t r = this->_Rounds - 1; r < this->_Rounds; --r) {
+      _vectorT _expanded(this->_expansionPermutation(halves.r));
+      _vectorT _mixed(this->_keyMixing(_expanded, r));
+      _vectorT _sBoxOut(this->_sBoxSubstitution(_mixed));
+      _vectorT _permuted(this->_pPermutation(_sBoxOut));
+      _vectorT _R1(this->_KeySize / 2);
+      for (std::uint16_t i{0}; i < _R1.size(); ++i) {
+        _R1[i] = halves.l[i] ^ _permuted[i];
       }
-      _vectorT _combined(this->_MAIN_KEY_SIZE);
-      for (std::uint16_t i{0}; i < _combined.size() / 2; ++i) {
-        _combined[i] = halves.r[i];
-        _combined[i + (_combined.size() / 2)] = halves.l[i];
-      }
-      _output = this->_finalPermutation(_combined);
-    } catch (const std::exception &_e) {
-      std::cerr << "Error: " << _e.what() << "\n";
+      halves.l = halves.r;
+      halves.r = _R1;
     }
+    _vectorT _combined(this->_KeySize);
+    for (std::uint16_t i{0}; i < _combined.size() / 2; ++i) {
+      _combined[i] = halves.r[i];
+      _combined[i + (_combined.size() / 2)] = halves.l[i];
+    }
+    _output = this->_finalPermutation(_combined);
   };
 
-  inline const struct _Halves _64bitBlockPartition(const _vectorT &_block) noexcept {
-    struct _Halves halves(_PERM_INP_HALF_SIZE);
+  __attribute__((hot, always_inline)) inline const struct _Halves _64bitBlockPartition(
+      const _vectorT& _block) noexcept {
+    struct _Halves halves(_HISize);
     for (std::uint16_t i{0}; i < halves.l.size(); ++i) {
       halves.l[i] = _block[i];
       halves.r[i] = _block[i + halves.l.size()];
@@ -540,15 +549,17 @@ private:
     return halves;
   };
 
-  inline const _vectorT _64bitBlockPermutation(const _vectorT &_block) {
-    _vectorT _block_permutation(this->_MAIN_KEY_SIZE);
-    for (std::uint16_t i{0}; i < this->_MAIN_KEY_SIZE; ++i) {
+  __attribute__((hot, always_inline)) inline const _vectorT _64bitBlockPermutation(
+      const _vectorT& _block) noexcept {
+    _vectorT _block_permutation(this->_KeySize);
+    for (std::uint16_t i{0}; i < this->_KeySize; ++i) {
       _block_permutation[i] = _block[this->_IP[i] - 1];
     }
     return _block_permutation;
   };
 
-  __attribute__((hot, always_inline)) inline void _keyRotation(struct _Halves &_halves, const std::uint16_t _round) {
+  __attribute__((hot, always_inline)) inline void _keyRotation(struct _Halves& _halves,
+                                                               const std::uint16_t _round) {
     if (_round >= std::size(this->_SHIFTS))
       throw std::invalid_argument("_round value is invalid!");
     std::uint16_t _shift{this->_SHIFTS[_round]};
@@ -556,54 +567,63 @@ private:
     std::rotate(_halves.r.begin(), _halves.r.begin() + _shift, _halves.r.end());
   };
 
-  __attribute__((cold, always_inline)) inline _vectorT _initPermutation(const _vectorT &_key) {
-    _vectorT _permuted_keys(this->_KEY_BITS);
-    for (std::uint16_t i{0}; i < this->_KEY_BITS; ++i) {
+  __attribute__((cold, always_inline)) inline _vectorT _initPermutation(
+      const _vectorT& _key) noexcept {
+    _vectorT _permuted_keys(this->_KeyBits);
+    for (std::uint16_t i{0}; i < this->_KeyBits; ++i) {
       _permuted_keys[i] = _key[this->_PC1[i] - 1];
     }
     return _permuted_keys;
   };
 
-  __attribute__((cold, always_inline)) inline struct _Halves _28bitKeyPartition(const _vectorT &_pk) {
-    struct _Halves _h(this->_PERM_KEY_HALF_SIZE);
-    for (std::uint16_t i{0}; i < this->_PERM_KEY_HALF_SIZE; ++i) {
+  __attribute__((cold, always_inline)) inline struct _Halves _28bitKeyPartition(
+      const _vectorT& _pk) noexcept {
+    struct _Halves _h(this->_HKSize);
+    for (std::uint16_t i{0}; i < this->_HKSize; ++i) {
       _h.l[i] = _pk[i];
-      _h.r[i] = _pk[i + this->_PERM_KEY_HALF_SIZE];
+      _h.r[i] = _pk[i + this->_HKSize];
     }
     return _h;
   };
 
-  __attribute__((cold)) const _vectorT _compressionPermutation(const struct _Halves &_halves) {
-    _vectorT _subkey(this->_ROUND_SUBKEY_SIZE);
+  __attribute__((hot, always_inline, stack_protect)) inline const _vectorT _compressionPermutation(
+      const struct _Halves& _halves) noexcept {
+    _vectorT _subkey(this->_SKSize);
     for (std::uint16_t i{0}; i < _subkey.size(); ++i) {
-      _subkey[i] = (this->_PC2[i] <= 28) ? _halves.l[this->_PC2[i] - 1] : _halves.r[this->_PC2[i] - 29];
+      _subkey[i] =
+          (this->_PC2[i] <= 28) ? _halves.l[this->_PC2[i] - 1] : _halves.r[this->_PC2[i] - 29];
     }
     return (const _vectorT)_subkey;
   };
 
-  __attribute__((hot, always_inline)) inline const _vectorT _expansionPermutation(const _vectorT &_r) noexcept {
-    _vectorT _expanded(this->_ROUND_SUBKEY_SIZE);
+  __attribute__((hot, always_inline, stack_protect)) inline const _vectorT _expansionPermutation(
+      const _vectorT& _r) noexcept {
+    _vectorT _expanded(this->_SKSize);
     for (std::uint16_t i{0}; i < _expanded.size(); ++i) {
       _expanded[i] = _r[this->_E[i] - 1];
     }
     return _expanded;
   };
 
-  __attribute__((hot, always_inline)) inline const _vectorT _keyMixing(const _vectorT &_expanded, const std::uint16_t _round) noexcept {
-    _vectorT _mixed(this->_ROUND_SUBKEY_SIZE);
-    for (std::uint16_t i{0}; i < this->_ROUND_SUBKEY_SIZE; ++i) {
+  __attribute__((hot, always_inline, stack_protect)) inline const _vectorT _keyMixing(
+      const _vectorT& _expanded,
+      const std::uint16_t _round) noexcept {
+    _vectorT _mixed(this->_SKSize);
+    for (std::uint16_t i{0}; i < this->_SKSize; ++i) {
       _mixed[i] = _expanded[i] ^ this->__subkeys[_round][i];
     }
     return _mixed;
   };
 
-  __attribute__((hot)) const _vectorT _sBoxSubstitution(const _vectorT &_mixed) noexcept {
-    _vectorT _out(_PERM_INP_HALF_SIZE);
+  __attribute__((hot, stack_protect)) const _vectorT
+  _sBoxSubstitution(const _vectorT& _mixed) noexcept {
+    _vectorT _out(_HISize);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
     for (std::uint16_t i{0}; i < 8; ++i) {
       std::uint16_t _row{(_mixed[i * 8] << 1) | _mixed[i * 6 + 5]};
-      std::uint16_t _col{(_mixed[i * 6 + 1] << 3) | (_mixed[i * 6 + 2] << 2) | (_mixed[i * 6 + 3] << 1) | (_mixed[i * 6 + 4])};
+      std::uint16_t _col{(_mixed[i * 6 + 1] << 3) | (_mixed[i * 6 + 2] << 2) |
+                         (_mixed[i * 6 + 3] << 1) | (_mixed[i * 6 + 4])};
       std::uint16_t _sboxOut{this->_S_BOX[i][_row][_col]};
       for (std::uint16_t j{0}; j < 4; ++j) {
         _out[i * 4 + j] = (_sboxOut >> (3 - j)) & 1;
@@ -613,105 +633,123 @@ private:
     return _out;
   };
 
-  __attribute__((hot, always_inline)) inline const _vectorT _pPermutation(const _vectorT &_input) {
-    _vectorT _out(_PERM_INP_HALF_SIZE);
+  __attribute__((hot, always_inline, stack_protect)) inline const _vectorT _pPermutation(
+      const _vectorT& _input) noexcept {
+    _vectorT _out(_HISize);
     for (std::uint16_t i{0}; i < _out.size(); ++i) {
       _out[i] = _input[this->_IP[i] - 1];
     }
     return _out;
   };
 
-  __attribute__((hot, always_inline)) inline const _vectorT _finalPermutation(const _vectorT &_combined) noexcept {
-    _vectorT _out(_MAIN_KEY_SIZE);
+  __attribute__((hot, always_inline)) inline const _vectorT _finalPermutation(
+      const _vectorT& _combined) noexcept {
+    _vectorT _out(_KeySize);
     for (std::uint16_t i{0}; i < _out.size(); ++i) {
       _out[i] = _combined[this->_IP_INV[i] - 1];
     }
     return _out;
   };
 
-  inline const _vectorT _convertKeyStr2Binary(const std::string &_key) {
-    _vectorT _keyResult(this->_MAIN_KEY_SIZE);
+  __attribute__((cold)) inline const _vectorT _convertKeyStr2Binary(
+      const std::string& _key) noexcept {
+    _vectorT _keyResult(this->_KeySize);
     for (std::size_t i{0}; i < _key.length(); ++i) {
-      std::bitset<8> bits(_key[i]);
-      for (int j{7}; j >= 0; --j) {
-        _keyResult[i * 8 + j] = bits[j];
-      }
+        unsigned char ch = static_cast<unsigned char>(_key[i]);
+        for (int j{7}; j >= 0; --j) {
+            _keyResult[i * 8 + j] = (ch >> j) & 1;
+        }
     }
     return _keyResult;
-  };
+}
 
   _mVectorT __subkeys;
 
-  const std::uint16_t _EXEC_ROUNDS = 0b0010000u;
-  const std::uint16_t _MAIN_KEY_SIZE = 0b01000000u;                    // full 64 bits
-  const std::uint16_t _PARITY_CHECK_BITS = 0b00001000u;                // 8 bits
-  const std::uint16_t _KEY_BITS = _MAIN_KEY_SIZE - _PARITY_CHECK_BITS; // 56-bits
-  const std::uint16_t _DATA_BLOCK_SIZE = 0b01000000u;                  // 64-bits data block size
-  const std::uint16_t _ROUND_SUBKEY_SIZE = 0b00110000u;                // 48-bits subkey size
-  const std::uint16_t _PERM_INP_HALF_SIZE = 0b00100000u;               // 32-bits permuted input size
-  const std::uint16_t _PERM_KEY_HALF_SIZE = 0b00011100u;               // 28-bits permuted key size
+  const std::uint16_t _Rounds = 0b0010000u;
+  const std::uint16_t _KeySize = 0b01000000u;             // 64-bits
+  const std::uint16_t _ParityBits = 0b00001000u;          // 8-bits
+  const std::uint16_t _KeyBits = _KeySize - _ParityBits;  // 56-bits
+  const std::uint16_t _BlockSize = 0b01000000u;           // 64-bits data block size
+  const std::uint16_t _SKSize = 0b00110000u;              // 48-bits subkey size
+  const std::uint16_t _HISize = 0b00100000u;              // 32-bits permuted input size
+  const std::uint16_t _HKSize = 0b00011100u;              // 28-bits permuted key size
 
-  const std::uint16_t _S_BOX[_S_BOX_SIZE][_S_BOX_ROWS][_S_BOX_COLS] = {{{0xE, 0x4, 0xD, 0x1, 0x2, 0xF, 0xB, 0x8, 0x3, 0xA, 0x6, 0xC, 0x5, 0x9, 0x0, 0x7},
-                                                                        {0x0, 0xF, 0x7, 0x4, 0xE, 0x2, 0xD, 0x1, 0xA, 0x6, 0xC, 0xB, 0x9, 0x5, 0x3, 0x8},
-                                                                        {0x4, 0x1, 0xE, 0x8, 0xD, 0x6, 0x2, 0xB, 0xF, 0xC, 0x9, 0x7, 0x3, 0xA, 0x5, 0x0},
-                                                                        {0xF, 0x2, 0x8, 0xE, 0x6, 0xB, 0x1, 0x3, 0x4, 0x9, 0x7, 0xD, 0xA, 0x0, 0x5, 0xC}},
-                                                                       {{0xF, 0x1, 0x8, 0xE, 0x6, 0xB, 0x3, 0x4, 0x9, 0x7, 0x2, 0xD, 0x0, 0x5, 0xA, 0xC},
-                                                                        {0x3, 0xD, 0x4, 0x7, 0xF, 0x2, 0x8, 0xE, 0xC, 0x0, 0x1, 0xA, 0x6, 0x9, 0xB, 0x5},
-                                                                        {0x0, 0xE, 0x7, 0xB, 0xA, 0x4, 0xD, 0x1, 0x5, 0x8, 0xC, 0x6, 0x9, 0x3, 0x2, 0xF},
-                                                                        {0xD, 0x8, 0xA, 0x1, 0x3, 0xF, 0x4, 0x2, 0xB, 0x6, 0x7, 0xC, 0x0, 0x5, 0xE, 0x9}},
-                                                                       {{0xA, 0x0, 0x9, 0xE, 0x6, 0x3, 0xF, 0x5, 0x1, 0xD, 0x2, 0x8, 0x4, 0x7, 0x6, 0xB},
-                                                                        {0xD, 0x7, 0x0, 0x9, 0x3, 0x4, 0x6, 0xA, 0x2, 0x8, 0x5, 0xE, 0xC, 0xB, 0xF, 0x1},
-                                                                        {0xD, 0x6, 0x4, 0x9, 0x8, 0xF, 0x3, 0x0, 0xB, 0x1, 0x2, 0xC, 0x5, 0xA, 0xE, 0x7},
-                                                                        {0x1, 0xA, 0xD, 0x0, 0x6, 0x9, 0x8, 0x7, 0x4, 0xF, 0xE, 0x3, 0xB, 0x5, 0x2, 0xC}},
-                                                                       {{0x7, 0xD, 0xE, 0x3, 0x0, 0x6, 0x9, 0xA, 0x1, 0x2, 0x8, 0x5, 0xB, 0xC, 0x4, 0xF},
-                                                                        {0xD, 0x8, 0xB, 0x5, 0x6, 0xF, 0x0, 0x3, 0x4, 0x7, 0x2, 0xC, 0x1, 0xA, 0xE, 0x9},
-                                                                        {0xA, 0x6, 0x9, 0x0, 0xC, 0xB, 0x7, 0xD, 0xF, 0x1, 0x3, 0xE, 0x5, 0x2, 0x4, 0x8},
-                                                                        {0x3, 0xF, 0x0, 0x6, 0xA, 0x1, 0xD, 0x8, 0x9, 0x4, 0x5, 0xB, 0xC, 0x7, 0x2, 0xE}},
-                                                                       {{0x2, 0xC, 0x4, 0x1, 0x7, 0xA, 0xB, 0x6, 0x9, 0x5, 0x3, 0xE, 0x0, 0xF, 0xD, 0x8},
-                                                                        {0x4, 0x2, 0x1, 0xB, 0xA, 0xD, 0x7, 0x8, 0xF, 0x9, 0xC, 0x5, 0x6, 0x3, 0x0, 0xE},
-                                                                        {0xB, 0x8, 0xC, 0x7, 0x1, 0xE, 0x2, 0xD, 0x6, 0xF, 0x0, 0x9, 0xA, 0x4, 0x5, 0x3},
-                                                                        {0xC, 0x1, 0xA, 0xF, 0x9, 0x2, 0x6, 0x8, 0x0, 0xD, 0x3, 0x4, 0xE, 0x7, 0x5, 0xB}},
-                                                                       {{0xC, 0x1, 0xA, 0xF, 0x9, 0x2, 0x6, 0x8, 0x0, 0xD, 0x3, 0x4, 0xE, 0x7, 0x5, 0xB},
-                                                                        {0xA, 0xF, 0x4, 0x2, 0x1, 0x7, 0x6, 0xB, 0xD, 0x9, 0x0, 0xE, 0x3, 0x5, 0xC, 0x8},
-                                                                        {0x9, 0xE, 0xF, 0x5, 0x2, 0x8, 0xC, 0x3, 0x7, 0x0, 0x4, 0xA, 0x1, 0xD, 0xB, 0x6},
-                                                                        {0x4, 0x3, 0x2, 0xC, 0x1, 0xA, 0xF, 0x9, 0xE, 0x7, 0x5, 0xB, 0x6, 0x8, 0x0, 0xD}},
-                                                                       {{0x4, 0xB, 0x2, 0xE, 0xF, 0x0, 0x8, 0xD, 0x3, 0xC, 0x9, 0x7, 0x5, 0xA, 0x6, 0x1},
-                                                                        {0xD, 0x0, 0xB, 0x7, 0x4, 0x9, 0x1, 0xA, 0xE, 0x3, 0x5, 0xC, 0x2, 0xF, 0x8, 0x6},
-                                                                        {0x1, 0x4, 0xB, 0xD, 0xC, 0x3, 0x7, 0xE, 0xA, 0xF, 0x6, 0x8, 0x0, 0x5, 0x9, 0x2},
-                                                                        {0x6, 0x1, 0x4, 0xB, 0xD, 0xC, 0x3, 0x7, 0xE, 0xA, 0xF, 0x8, 0x0, 0x5, 0x9, 0x2}},
-                                                                       {{0xD, 0x2, 0x8, 0x4, 0x6, 0xF, 0xB, 0x1, 0xA, 0x9, 0x3, 0xE, 0x5, 0x0, 0xC, 0x7},
-                                                                        {0x1, 0xF, 0xD, 0x8, 0xA, 0x3, 0x7, 0x4, 0xC, 0x5, 0x6, 0xB, 0x0, 0xE, 0x9, 0x2},
-                                                                        {0x7, 0xB, 0x4, 0x1, 0x9, 0xC, 0xE, 0x2, 0x0, 0x6, 0xA, 0xD, 0xF, 0x3, 0x5, 0x8},
-                                                                        {0x2, 0x1, 0xE, 0x7, 0x4, 0xA, 0x8, 0xD, 0xF, 0xC, 0x9, 0x0, 0x3, 0x5, 0x6, 0xB}}};
+  const std::uint16_t _S_BOX[SBSZ][SBR][SBC] = {
+      {{0xE, 0x4, 0xD, 0x1, 0x2, 0xF, 0xB, 0x8, 0x3, 0xA, 0x6, 0xC, 0x5, 0x9, 0x0, 0x7},
+       {0x0, 0xF, 0x7, 0x4, 0xE, 0x2, 0xD, 0x1, 0xA, 0x6, 0xC, 0xB, 0x9, 0x5, 0x3, 0x8},
+       {0x4, 0x1, 0xE, 0x8, 0xD, 0x6, 0x2, 0xB, 0xF, 0xC, 0x9, 0x7, 0x3, 0xA, 0x5, 0x0},
+       {0xF, 0x2, 0x8, 0xE, 0x6, 0xB, 0x1, 0x3, 0x4, 0x9, 0x7, 0xD, 0xA, 0x0, 0x5, 0xC}},
+      {{0xF, 0x1, 0x8, 0xE, 0x6, 0xB, 0x3, 0x4, 0x9, 0x7, 0x2, 0xD, 0x0, 0x5, 0xA, 0xC},
+       {0x3, 0xD, 0x4, 0x7, 0xF, 0x2, 0x8, 0xE, 0xC, 0x0, 0x1, 0xA, 0x6, 0x9, 0xB, 0x5},
+       {0x0, 0xE, 0x7, 0xB, 0xA, 0x4, 0xD, 0x1, 0x5, 0x8, 0xC, 0x6, 0x9, 0x3, 0x2, 0xF},
+       {0xD, 0x8, 0xA, 0x1, 0x3, 0xF, 0x4, 0x2, 0xB, 0x6, 0x7, 0xC, 0x0, 0x5, 0xE, 0x9}},
+      {{0xA, 0x0, 0x9, 0xE, 0x6, 0x3, 0xF, 0x5, 0x1, 0xD, 0x2, 0x8, 0x4, 0x7, 0x6, 0xB},
+       {0xD, 0x7, 0x0, 0x9, 0x3, 0x4, 0x6, 0xA, 0x2, 0x8, 0x5, 0xE, 0xC, 0xB, 0xF, 0x1},
+       {0xD, 0x6, 0x4, 0x9, 0x8, 0xF, 0x3, 0x0, 0xB, 0x1, 0x2, 0xC, 0x5, 0xA, 0xE, 0x7},
+       {0x1, 0xA, 0xD, 0x0, 0x6, 0x9, 0x8, 0x7, 0x4, 0xF, 0xE, 0x3, 0xB, 0x5, 0x2, 0xC}},
+      {{0x7, 0xD, 0xE, 0x3, 0x0, 0x6, 0x9, 0xA, 0x1, 0x2, 0x8, 0x5, 0xB, 0xC, 0x4, 0xF},
+       {0xD, 0x8, 0xB, 0x5, 0x6, 0xF, 0x0, 0x3, 0x4, 0x7, 0x2, 0xC, 0x1, 0xA, 0xE, 0x9},
+       {0xA, 0x6, 0x9, 0x0, 0xC, 0xB, 0x7, 0xD, 0xF, 0x1, 0x3, 0xE, 0x5, 0x2, 0x4, 0x8},
+       {0x3, 0xF, 0x0, 0x6, 0xA, 0x1, 0xD, 0x8, 0x9, 0x4, 0x5, 0xB, 0xC, 0x7, 0x2, 0xE}},
+      {{0x2, 0xC, 0x4, 0x1, 0x7, 0xA, 0xB, 0x6, 0x9, 0x5, 0x3, 0xE, 0x0, 0xF, 0xD, 0x8},
+       {0x4, 0x2, 0x1, 0xB, 0xA, 0xD, 0x7, 0x8, 0xF, 0x9, 0xC, 0x5, 0x6, 0x3, 0x0, 0xE},
+       {0xB, 0x8, 0xC, 0x7, 0x1, 0xE, 0x2, 0xD, 0x6, 0xF, 0x0, 0x9, 0xA, 0x4, 0x5, 0x3},
+       {0xC, 0x1, 0xA, 0xF, 0x9, 0x2, 0x6, 0x8, 0x0, 0xD, 0x3, 0x4, 0xE, 0x7, 0x5, 0xB}},
+      {{0xC, 0x1, 0xA, 0xF, 0x9, 0x2, 0x6, 0x8, 0x0, 0xD, 0x3, 0x4, 0xE, 0x7, 0x5, 0xB},
+       {0xA, 0xF, 0x4, 0x2, 0x1, 0x7, 0x6, 0xB, 0xD, 0x9, 0x0, 0xE, 0x3, 0x5, 0xC, 0x8},
+       {0x9, 0xE, 0xF, 0x5, 0x2, 0x8, 0xC, 0x3, 0x7, 0x0, 0x4, 0xA, 0x1, 0xD, 0xB, 0x6},
+       {0x4, 0x3, 0x2, 0xC, 0x1, 0xA, 0xF, 0x9, 0xE, 0x7, 0x5, 0xB, 0x6, 0x8, 0x0, 0xD}},
+      {{0x4, 0xB, 0x2, 0xE, 0xF, 0x0, 0x8, 0xD, 0x3, 0xC, 0x9, 0x7, 0x5, 0xA, 0x6, 0x1},
+       {0xD, 0x0, 0xB, 0x7, 0x4, 0x9, 0x1, 0xA, 0xE, 0x3, 0x5, 0xC, 0x2, 0xF, 0x8, 0x6},
+       {0x1, 0x4, 0xB, 0xD, 0xC, 0x3, 0x7, 0xE, 0xA, 0xF, 0x6, 0x8, 0x0, 0x5, 0x9, 0x2},
+       {0x6, 0x1, 0x4, 0xB, 0xD, 0xC, 0x3, 0x7, 0xE, 0xA, 0xF, 0x8, 0x0, 0x5, 0x9, 0x2}},
+      {{0xD, 0x2, 0x8, 0x4, 0x6, 0xF, 0xB, 0x1, 0xA, 0x9, 0x3, 0xE, 0x5, 0x0, 0xC, 0x7},
+       {0x1, 0xF, 0xD, 0x8, 0xA, 0x3, 0x7, 0x4, 0xC, 0x5, 0x6, 0xB, 0x0, 0xE, 0x9, 0x2},
+       {0x7, 0xB, 0x4, 0x1, 0x9, 0xC, 0xE, 0x2, 0x0, 0x6, 0xA, 0xD, 0xF, 0x3, 0x5, 0x8},
+       {0x2, 0x1, 0xE, 0x7, 0x4, 0xA, 0x8, 0xD, 0xF, 0xC, 0x9, 0x0, 0x3, 0x5, 0x6, 0xB}}};
 
-  const std::uint16_t _PC1[56] = {0x39, 0x31, 0x29, 0x21, 0x19, 0x11, 0x09, 0x01, 0x3A, 0x32, 0x2A, 0x22, 0x1A, 0x12, 0x0A, 0x02, 0x3B, 0x33, 0x2B,
-                                  0x23, 0x1B, 0x13, 0x0B, 0x03, 0x3C, 0x34, 0x2C, 0x24, 0x3F, 0x37, 0x2F, 0x27, 0x1F, 0x17, 0x0F, 0x07, 0x3E, 0x36,
-                                  0x2E, 0x26, 0x1E, 0x16, 0x0E, 0x06, 0x3D, 0x35, 0x2D, 0x25, 0x1D, 0x15, 0x0D, 0x05, 0x1C, 0x14, 0x0C, 0x04};
+  const std::uint16_t _PC1[56] = {
+      0x39, 0x31, 0x29, 0x21, 0x19, 0x11, 0x09, 0x01, 0x3A, 0x32, 0x2A, 0x22, 0x1A, 0x12,
+      0x0A, 0x02, 0x3B, 0x33, 0x2B, 0x23, 0x1B, 0x13, 0x0B, 0x03, 0x3C, 0x34, 0x2C, 0x24,
+      0x3F, 0x37, 0x2F, 0x27, 0x1F, 0x17, 0x0F, 0x07, 0x3E, 0x36, 0x2E, 0x26, 0x1E, 0x16,
+      0x0E, 0x06, 0x3D, 0x35, 0x2D, 0x25, 0x1D, 0x15, 0x0D, 0x05, 0x1C, 0x14, 0x0C, 0x04};
 
-  const std::uint16_t _PC2[48] = {0xE,  0x11, 0xB,  0x18, 0x1, 0x5,  0x3, 0x1C, 0xF, 0x6, 0x15, 0xA,  0x17, 0x13, 0xC, 0x4,  0x1A, 0x8,  0x10, 0x7,  0x1B, 0x14, 0xD,  0x2,
-                                  0x29, 0x18, 0x25, 0x1E, 0x3, 0x2E, 0xA, 0xD,  0xF, 0x2, 0x8,  0x2F, 0xC,  0x6,  0x1, 0x27, 0x5,  0x1D, 0x2C, 0x26, 0x24, 0xB,  0x19, 0x1C};
+  const std::uint16_t _PC2[48] = {0xE,  0x11, 0xB,  0x18, 0x1,  0x5,  0x3,  0x1C, 0xF,  0x6,
+                                  0x15, 0xA,  0x17, 0x13, 0xC,  0x4,  0x1A, 0x8,  0x10, 0x7,
+                                  0x1B, 0x14, 0xD,  0x2,  0x29, 0x18, 0x25, 0x1E, 0x3,  0x2E,
+                                  0xA,  0xD,  0xF,  0x2,  0x8,  0x2F, 0xC,  0x6,  0x1,  0x27,
+                                  0x5,  0x1D, 0x2C, 0x26, 0x24, 0xB,  0x19, 0x1C};
 
-  const std::uint16_t _SHIFTS[16] = {0x1, 0x1, 0x2, 0x2, 0x2, 0x2, 0x1, 0x2, 0x2, 0x2, 0x2, 0x2, 0x1, 0x2, 0x2, 0x1};
+  const std::uint16_t _SHIFTS[16] = {0x1, 0x1, 0x2, 0x2, 0x2, 0x2, 0x1, 0x2,
+                                     0x2, 0x2, 0x2, 0x2, 0x1, 0x2, 0x2, 0x1};
 
-  const std::uint16_t _IP[64] = {0x3A, 0x32, 0x2A, 0x22, 0x1A, 0x12, 0x0A, 0x02, 0x3C, 0x34, 0x2C, 0x24, 0x1C, 0x14, 0x0C, 0x04, 0x3E, 0x36, 0x2E, 0x26, 0x1E, 0x16,
-                                 0x0E, 0x06, 0x40, 0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x39, 0x31, 0x29, 0x21, 0x19, 0x11, 0x09, 0x01, 0x3B, 0x33, 0x2B, 0x23,
-                                 0x1B, 0x13, 0x0B, 0x03, 0x3D, 0x35, 0x2D, 0x25, 0x1D, 0x15, 0x0D, 0x05, 0x3F, 0x37, 0x2F, 0x27, 0x1F, 0x17, 0x0F, 0x07};
+  const std::uint16_t _IP[64] = {0x3A, 0x32, 0x2A, 0x22, 0x1A, 0x12, 0x0A, 0x02, 0x3C, 0x34, 0x2C,
+                                 0x24, 0x1C, 0x14, 0x0C, 0x04, 0x3E, 0x36, 0x2E, 0x26, 0x1E, 0x16,
+                                 0x0E, 0x06, 0x40, 0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x39,
+                                 0x31, 0x29, 0x21, 0x19, 0x11, 0x09, 0x01, 0x3B, 0x33, 0x2B, 0x23,
+                                 0x1B, 0x13, 0x0B, 0x03, 0x3D, 0x35, 0x2D, 0x25, 0x1D, 0x15, 0x0D,
+                                 0x05, 0x3F, 0x37, 0x2F, 0x27, 0x1F, 0x17, 0x0F, 0x07};
 
-  const std::uint16_t _E[48] = {0x20, 0x1,  0x2,  0x3,  0x4,  0x5,  0x4,  0x5,  0x6,  0x7,  0x8,  0x9,  0x8,  0x9,  0xA,  0xB,  0xC,  0xD,  0xC,  0xD,  0xE,  0xF,  0x10, 0x11,
-                                0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x1};
+  const std::uint16_t _E[48] = {0x20, 0x1,  0x2,  0x3,  0x4,  0x5,  0x4,  0x5,  0x6,  0x7,
+                                0x8,  0x9,  0x8,  0x9,  0xA,  0xB,  0xC,  0xD,  0xC,  0xD,
+                                0xE,  0xF,  0x10, 0x11, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+                                0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x18, 0x19, 0x1A, 0x1B,
+                                0x1C, 0x1D, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x1};
 
-  const std::uint16_t _IP_INV[64] = {0x28, 0x8,  0x30, 0x10, 0x38, 0x18, 0x40, 0x20, 0x27, 0x7,  0x2F, 0xF,  0x37, 0x17, 0x3F, 0x1F, 0x26, 0x6,  0x2E, 0xE, 0x36, 0x16,
-                                     0x3E, 0x1E, 0x25, 0x5,  0x2D, 0xD,  0x35, 0x15, 0x3D, 0x1D, 0x24, 0x4,  0x2C, 0xC,  0x34, 0x14, 0x3C, 0x1C, 0x23, 0x3, 0x2B, 0xB,
-                                     0x33, 0x13, 0x3B, 0x1B, 0x22, 0x2,  0x2A, 0xA,  0x32, 0x12, 0x3A, 0x1A, 0x21, 0x1,  0x29, 0x9,  0x31, 0x11, 0x39, 0x19};
+  const std::uint16_t _IP_INV[64] = {
+      0x28, 0x8, 0x30, 0x10, 0x38, 0x18, 0x40, 0x20, 0x27, 0x7, 0x2F, 0xF, 0x37, 0x17, 0x3F, 0x1F,
+      0x26, 0x6, 0x2E, 0xE,  0x36, 0x16, 0x3E, 0x1E, 0x25, 0x5, 0x2D, 0xD, 0x35, 0x15, 0x3D, 0x1D,
+      0x24, 0x4, 0x2C, 0xC,  0x34, 0x14, 0x3C, 0x1C, 0x23, 0x3, 0x2B, 0xB, 0x33, 0x13, 0x3B, 0x1B,
+      0x22, 0x2, 0x2A, 0xA,  0x32, 0x12, 0x3A, 0x1A, 0x21, 0x1, 0x29, 0x9, 0x31, 0x11, 0x39, 0x19};
 
-#ifdef _S_BOX_SIZE
-#undef _S_BOX_SIZE
+#ifdef SBSZ
+#undef SBSZ
 #endif
-#ifdef _S_BOX_ROWS
-#undef _S_BOX_ROWS
+#ifdef SBR
+#undef SBR
 #endif
-#ifdef _S_BOX_COLS
-#undef _S_BOX_COLS
+#ifdef SBC
+#undef SBC
 #endif
 };
-}; // namespace DES
+};  // namespace DES
