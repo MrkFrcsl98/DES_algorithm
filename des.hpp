@@ -157,7 +157,7 @@ class ByteHelper {
    * @return const std::vector<_bT>
    */
   template <typename _bT = unsigned char>
-  inline static constexpr std::vector<_bT> toByteArray(const std::string& _source) noexcept {
+  inline static constexpr std::vector<_bT> toByteVector(const std::string& _source) noexcept {
     if (_source.empty()) [[unlikely]]
       return {};
     std::vector<_bT> out(_source.size());
@@ -317,6 +317,12 @@ class DES_Encryption : public ByteHelper<bool> {
       _out.insert(_out.end(), _encryptedBlock.begin(), _encryptedBlock.end());
     }
     return _out;
+  };
+
+  const _vectorT Encrypt(const std::string& _source) {
+    std::vector<std::uint8_t> byte_array = DES_Encryption::toByteVector(_source);  // convert string message to vector type
+    DES_Encryption::tBitStream binary_message = DES_Encryption::toBinary(byte_array);  // now convert to binary, tBitStream is a type
+    return this->Encrypt(binary_message);
   };
 
   /**
@@ -655,13 +661,13 @@ class DES_Encryption : public ByteHelper<bool> {
       const std::string& _key) noexcept {
     _vectorT _keyResult(this->_KeySize);
     for (std::size_t i{0}; i < _key.length(); ++i) {
-        unsigned char ch = static_cast<unsigned char>(_key[i]);
-        for (int j{7}; j >= 0; --j) {
-            _keyResult[i * 8 + j] = (ch >> j) & 1;
-        }
+      unsigned char ch = static_cast<unsigned char>(_key[i]);
+      for (int j{7}; j >= 0; --j) {
+        _keyResult[i * 8 + j] = (ch >> j) & 1;
+      }
     }
     return _keyResult;
-}
+  }
 
   _mVectorT __subkeys;
 
@@ -753,3 +759,4 @@ class DES_Encryption : public ByteHelper<bool> {
 #endif
 };
 };  // namespace DES
+
