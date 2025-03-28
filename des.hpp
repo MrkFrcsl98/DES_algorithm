@@ -336,9 +336,14 @@ public:
       this->_64bitBlockDTransformation(_block, _decryptedBlock);
       _out.insert(_out.end(), _decryptedBlock.begin(), _decryptedBlock.end());
     }
-    while (!_out.empty() && _out.back() == 0) {
-      _out.pop_back();
+    auto to_string_bytes = toAscii(_out);
+    int back = to_string_bytes.back();
+    while (!to_string_bytes.empty() && ((int)to_string_bytes.back() == back)) {
+      to_string_bytes.pop_back();
     }
+
+    _out = toBinary(to_string_bytes);
+
     return _out;
   };
 
@@ -354,8 +359,9 @@ private:
   inline void _64bitPadding(_vectorT &_source) {
     if (_source.empty())
       return;
-    while (_source.size() % this->_MAIN_KEY_SIZE != 0) {
-      _source.push_back(0);
+    std::size_t padding_size = this->_MAIN_KEY_SIZE - (_source.size() % this->_MAIN_KEY_SIZE);
+    for (std::size_t i = 0; i < padding_size; ++i) {
+      _source.push_back((int)padding_size);
     }
   };
 
