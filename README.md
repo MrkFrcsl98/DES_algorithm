@@ -196,7 +196,6 @@ It’s ideal for cryptography education, experimentation, and understanding the 
 
 - Full DES & 3DES support with unified API
 - ECB, CBC, CFB, OFB, CTR modes for both DES and 3DES
-- Secure random key & IV generation
 - PKCS7 padding for all modes
 - Clean, educational code in a single header (`des.hpp`)
 - Simple, modern C++ usage
@@ -223,15 +222,6 @@ All modes are available for both DES and TripleDES with identical API.
 
 ---
 
-## Key and IV Generation
-
-```cpp
-auto des_key    = DESUtils::GenerateKey();        // 8 bytes for DES
-auto des_iv     = DESUtils::GenerateIV();         // 8 bytes for DES/3DES IV
-auto tdes_key   = DESUtils::GenerateTripleKey();  // 24 bytes (3 * 8)
-```
-
----
 
 ## Usage
 
@@ -241,10 +231,18 @@ auto tdes_key   = DESUtils::GenerateTripleKey();  // 24 bytes (3 * 8)
 #include "des.hpp"
 ```
 
-### 2. (Optional) Use the Namespace
+### 2. Define Arguments
 
 ```cpp
-using namespace DES;
+std::string message("something to encrypt with DES");
+std::string key("12345678");
+
+// additionally, define 2 more keys for 3DES...
+std::string key2("12345678"); // note that these should be different and secure keys...
+std::string key3("12345678");
+
+// now define the IV for modes using an IV...
+std::vector<bool> iv(64, 1); // example iv with all bits set, im using bool type because it's ok to represent bits...
 ```
 
 ### 3. Encrypt and Decrypt
@@ -252,66 +250,15 @@ using namespace DES;
 #### DES Example (CBC Mode)
 
 ```cpp
-std::string plaintext = "this is a secret message...";
-std::string key = "12345678"; // Must be 8 bytes
-std::vector<bool> iv = detail::toBitVector("abcdefgh"); // 8 bytes
-
-auto encrypted = DES::CBC::Encrypt(plaintext, key, iv);
-auto decrypted = DES::CBC::Decrypt(encrypted.toString(), key, iv);
-
-std::cout << "Encrypted (hex): " << encrypted.toHex() << "\n";
-std::cout << "Decrypted: " << decrypted.toString() << "\n";
+auto cbc_enc = DES::CBC::Encrypt(message, key, iv);
+auto cbc_dec = DES::CBC::Decrypt(cbc_enc.toString(), key, iv);
 ```
 
 #### TripleDES Example (CFB Mode)
 
 ```cpp
-std::string k1 = "12345678";
-std::string k2 = "abcdefgh";
-std::string k3 = "ABCDEFGH";
-auto iv = detail::toBitVector("12345678");
-
-auto enc = TripleDES::CFB::Encrypt(plaintext, k1, k2, k3, iv);
-auto dec = TripleDES::CFB::Decrypt(enc.toString(), k1, k2, k3, iv);
-
-std::cout << "3DES Encrypted (hex): " << enc.toHex() << "\n";
-std::cout << "3DES Decrypted: " << dec.toString() << "\n";
-```
-
-#### Secure Key/IV Generation Example
-
-```cpp
-auto key_bytes = DESUtils::GenerateKey();
-auto triple_key = DESUtils::GenerateTripleKey();
-auto iv_bytes = DESUtils::GenerateIV();
-```
-
----
-
-## Example
-
-```cpp
-#include "des.hpp"
-#include <iostream>
-#include <iomanip>
-
-int main() {
-    using namespace DES;
-    std::string plaintext = "Attack at dawn! This is a test message.";
-    while (plaintext.size() % 8) plaintext += ".";
-
-    auto des_key = DESUtils::GenerateKey();
-    auto des_iv = DESUtils::GenerateIV();
-    std::string key(des_key.begin(), des_key.end());
-    std::string iv_str(des_iv.begin(), des_iv.end());
-    std::vector<bool> iv = detail::toBitVector(iv_str);
-
-    auto enc = DES::CBC::Encrypt(plaintext, key, iv);
-    auto dec = DES::CBC::Decrypt(enc.toString(), key, iv);
-
-    std::cout << "DES CBC Encrypted (hex): " << enc.toHex() << "\n";
-    std::cout << "DES CBC Decrypted: " << dec.toString() << "\n";
-}
+auto tdes_enc = DES::CBC::Encrypt3DES(message, key, key2, key3);
+auto tdes_dec = DES::CBC::Decrypt3DES(tdes_enc.toString(), key, key2, key3);
 ```
 
 ---
