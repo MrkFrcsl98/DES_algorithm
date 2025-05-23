@@ -559,7 +559,6 @@ struct OFB {
     static EncryptedResult Encrypt(const std::string& data, const std::string& key, const std::vector<bool>& iv = std::vector<bool>(64, 0)) {
         DES des(key);
         auto bits = detail::toBitVector(data);
-        des._PKCS7Padding(bits);
         std::vector<bool> prev = iv, out(bits.size());
         for (size_t i = 0; i < bits.size(); i += 64) {
             prev = des.encrypt(prev, false);
@@ -579,7 +578,6 @@ struct CTR {
     static EncryptedResult Encrypt(const std::string& data, const std::string& key, uint64_t nonce = 0) {
         DES des(key);
         auto bits = detail::toBitVector(data);
-        des._PKCS7Padding(bits);
         std::vector<bool> out(bits.size());
         for (size_t i = 0; i < bits.size(); i += 64) {
             uint64_t ctr = nonce + i / 64;
