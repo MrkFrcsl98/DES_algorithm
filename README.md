@@ -1,165 +1,330 @@
-# DES Encryption Implementation
+# DES & 3DES C++ Encryption Library
 
-## Overview
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![C++](https://img.shields.io/badge/language-C%2B%2B11%20%2B-blue)
+![DES](https://img.shields.io/badge/algorithm-DES%20%2F%203DES-green)
+![Modes](https://img.shields.io/badge/modes-ECB%2CCBC%2CCFB%2COFB%2CCTR-yellow)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
 
-![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/ewpoierwewoepowepw.jpg?raw=true)
 
-This project provides a C++ implementation of the Data Encryption Standard (DES) algorithm. DES is a symmetric-key block cipher that encrypts data in 64-bit blocks using a 56-bit key. Although DES is considered obsolete due to its vulnerability to modern attacks, this implementation serves as an educational tool to understand the principles of symmetric encryption and the workings of the DES algorithm.
+---
+
+## Contents
+
+- [DES Algorithm Documentation & History](#des-algorithm-documentation--history)
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Operation Modes](#operation-modes)
+- [Key and IV Generation](#key-and-iv-generation)
+- [Usage](#usage)
+- [Example](#example)
+- [Screenshots](#screenshots)
+- [License](#license)
+
+---
+
+
+## DES Algorithm Documentation & History
+
+### DES Block Cipher Overview
+
+The **Data Encryption Standard (DES)** is a symmetric-key block cipher that operates on 64-bit blocks of data using a 56-bit key (plus 8 parity bits). Developed by IBM in the 1970s and adopted as a U.S. federal standard in 1977, DES was the foundation of digital cryptography for decades. Although DES is now considered obsolete for secure communications, it remains a cornerstone for understanding block cipher design and symmetric encryption.
+
+### DES Encryption Pipeline
+
+#### 1. Initial Permutation (IP)
+
+- The 64-bit plaintext block is subjected to a fixed permutation called the Initial Permutation (IP), designed for hardware efficiency.
+- **Example:**  
+  If the input is `plaintext[0..63]`, the output is a reordered sequence where each output bit is mapped from a specific input bit according to the IP table.
+
+#### 2. Feistel Network Structure
+
+DES uses a Feistel network with 16 rounds.  
+Each round splits the block into left (L) and right (R) 32-bit halves:
+
+```
+L0 = IP_block[0..31]
+R0 = IP_block[32..63]
+```
+
+For each round i (1 ≤ i ≤ 16):
+
+```
+Li = Ri-1
+Ri = Li-1 XOR F(Ri-1, Ki)
+```
+
+Where:
+- **F** is the round function (see below)
+- **Ki** is the round subkey
+
+#### 3. Round Function (F-function)
+
+The F-function is central to DES security, introducing both confusion and diffusion:
+
+- **Expansion (E-Box):**  
+  The 32-bit right half is expanded to 48 bits by duplicating and permuting certain bits, according to the E-table:
+  ```
+  expanded_block[0..47] = ExpansionPermutation(Ri-1)
+  ```
+  This ensures each S-box input depends on multiple plaintext bits.
+
+- **XOR with Subkey:**  
+  The expanded block is XORed with the 48-bit round subkey:
+  ```
+  xored_block = expanded_block XOR Ki
+  ```
+
+- **Substitution (S-Boxes):**  
+  The 48-bit block is divided into eight 6-bit chunks.  
+  Each chunk is mapped through a specific S-box, producing a 4-bit output.  
+  This yields a 32-bit output, dramatically increasing non-linearity.
+  ```
+  for i in 0..7:
+      sbox_output[i] = Sbox[i](xored_block[i*6 : (i+1)*6])
+  combined_sbox = concat(sbox_output[0..7]) // 32 bits
+  ```
+
+- **Permutation (P-Box):**  
+  The combined S-box output is permuted to further diffuse the bits:
+  ```
+  permuted = PPermutation(combined_sbox)
+  ```
+
+#### 4. Swap and Repeat
+
+- After each round, the left and right halves are swapped for the next round.
+- After the 16th round, the halves are recombined as (R16, L16).
+
+#### 5. Final Permutation (IP-1)
+
+- The combined block is passed through the inverse of the initial permutation (IP-1), producing the final ciphertext.
+
+---
+
+### DES Key Schedule
+
+- The original 64-bit key is reduced to 56 bits by discarding every 8th bit (parity).
+- The 56-bit key is split into two 28-bit halves.
+- For each round:
+  - Each half is rotated left by 1 or 2 bits (depending on the round).
+  - 48 bits are selected using a fixed permutation (PC-2) to form the subkey for that round.
+
+---
+
+### Triple DES (3DES)
+
+**3DES** (“Triple DES”) enhances DES security by applying the DES cipher three times in sequence with three different keys:
+```
+Ciphertext = DES_encrypt(K3, DES_decrypt(K2, DES_encrypt(K1, Plaintext)))
+```
+- **3 independent keys**: 168-bit key strength
+- Same block size and mode support as DES
+
+---
+
+## Example: DES Round Operations
+
+Let’s walk through the operations for a single round:
+
+**Input Block:**  
+`plaintext_block[64] = [b0, b1, ..., b63]`
+
+1. **Initial Permutation:**  
+   `IP_block[64] = InitialPermutation(plaintext_block)`
+
+2. **Split into Halves:**  
+   ```
+   L0[32] = IP_block[0..31]
+   R0[32] = IP_block[32..63]
+   ```
+
+3. **Round 1:**  
+   ```
+   L1 = R0
+   R1 = L0 XOR F(R0, K1)
+   ```
+
+4. **F-function Steps:**  
+   ```
+   expanded_R0[48] = ExpansionPermutation(R0)
+   xored = expanded_R0 XOR K1
+   sbox_out[32] = SBoxSubstitution(xored)
+   permuted = PPermutation(sbox_out)
+   ```
+
+5. **Combine and Swap:**  
+   After 16 rounds, final output is (R16, L16), which is then permuted using IP-1.
+
+---
+
+### DES Modes of Operation
+
+This library supports all major block cipher modes, for both DES and TripleDES:
+- **ECB** (Electronic Codebook)
+- **CBC** (Cipher Block Chaining)
+- **CFB** (Cipher Feedback)
+- **OFB** (Output Feedback)
+- **CTR** (Counter Mode)
+
+Each mode provides different security properties and is suitable for various applications. All are implemented in `des.hpp` with a unified API.
+
+---
+
+### Key and IV Generation
+
+For cryptographic safety and demonstration flexibility, this library includes secure key and IV generators:
+
+- `DESUtils::GenerateKey()` — 8 bytes for DES
+- `DESUtils::GenerateIV()` — 8 bytes for IV (for CBC/CFB/OFB/CTR)
+- `DESUtils::GenerateTripleKey()` — 24 bytes for 3DES
+
+---
+
+## Project Overview
+
+![DES Illustration](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/ewpoierwewoepowepw.jpg?raw=true)
+
+This project delivers a modern, header-only C++11 implementation of DES and 3DES algorithms, including all common block cipher modes and secure random key/IV generation.  
+It’s ideal for cryptography education, experimentation, and understanding the inner workings of classic symmetric ciphers.
+
+---
+
+## Features
+
+- Full DES & 3DES support with unified API
+- ECB, CBC, CFB, OFB, CTR modes for both DES and 3DES
+- Secure random key & IV generation
+- PKCS7 padding for all modes
+- Clean, educational code in a single header (`des.hpp`)
+- Simple, modern C++ usage
+
+
+---
 
 ## Requirements
 
 - C++11 or later
-- A C++ compiler (e.g., g++, clang++)
+- Standard C++ compiler (g++, clang++, MSVC)
 
-## How To Use
+---
 
-first extract the class from the namespace.
+## Operation Modes
+
+- **ECB** (Electronic Codebook)
+- **CBC** (Cipher Block Chaining)
+- **CFB** (Cipher Feedback)
+- **OFB** (Output Feedback)
+- **CTR** (Counter Mode)
+
+All modes are available for both DES and TripleDES with identical API.
+
+---
+
+## Key and IV Generation
+
+```cpp
+auto des_key    = DESUtils::GenerateKey();        // 8 bytes for DES
+auto des_iv     = DESUtils::GenerateIV();         // 8 bytes for DES/3DES IV
+auto tdes_key   = DESUtils::GenerateTripleKey();  // 24 bytes (3 * 8)
+```
+
+---
+
+## Usage
+
+### 1. Include the Header
+
+```cpp
+#include "des.hpp"
+```
+
+### 2. (Optional) Use the Namespace
 
 ```cpp
 using namespace DES;
 ```
 
-then, create new instance of DES.
+### 3. Encrypt and Decrypt
+
+#### DES Example (CBC Mode)
 
 ```cpp
-DES_Encryption des;
+std::string plaintext = "this is a secret message...";
+std::string key = "12345678"; // Must be 8 bytes
+std::vector<bool> iv = detail::toBitVector("abcdefgh"); // 8 bytes
+
+auto encrypted = DES::CBC::Encrypt(plaintext, key, iv);
+auto decrypted = DES::CBC::Decrypt(encrypted.toString(), key, iv);
+
+std::cout << "Encrypted (hex): " << encrypted.toHex() << "\n";
+std::cout << "Decrypted: " << decrypted.toString() << "\n";
 ```
 
-define some data and key, data can be long any size, the key must be 8 bytes
+#### TripleDES Example (CFB Mode)
+
 ```cpp
-    const std::string message = "this is a secret message...";
-    const std::string key = "12345678";
+std::string k1 = "12345678";
+std::string k2 = "abcdefgh";
+std::string k3 = "ABCDEFGH";
+auto iv = detail::toBitVector("12345678");
+
+auto enc = TripleDES::CFB::Encrypt(plaintext, k1, k2, k3, iv);
+auto dec = TripleDES::CFB::Decrypt(enc.toString(), k1, k2, k3, iv);
+
+std::cout << "3DES Encrypted (hex): " << enc.toHex() << "\n";
+std::cout << "3DES Decrypted: " << dec.toString() << "\n";
 ```
 
-encrypt
+#### Secure Key/IV Generation Example
+
 ```cpp
-    const DES_Encryption::tBitStream encrypted_as_binary = DES.Encrypt(message); // encrypt message, returns a vector<bool> containing binary data
+auto key_bytes = DESUtils::GenerateKey();
+auto triple_key = DESUtils::GenerateTripleKey();
+auto iv_bytes = DESUtils::GenerateIV();
 ```
 
-print encrypted result
-```cpp
-    std::cout << "Encrypted: " << DES_Encryption::toByteString(DES_Encryption::binToHex(encrypted_as_binary)) << "\n";
-```
+---
 
-decryption
-```cpp
-    DES_Encryption::tBitStream decrypted_as_binary = DES.Decrypt(encrypted_as_binary); // decrypt ciphertext
-```
+## Example
 
-print decrypted text
-```cpp
-    std::cout << "Decrypted: " << DES_Encryption::toByteString(DES_Encryption::toAscii(decrypted_as_binary)) << "\n"; 
-```
-
-complete example
 ```cpp
 #include "des.hpp"
 #include <iostream>
+#include <iomanip>
 
 int main() {
-#ifdef _DES_ENCRYPTION_ALGORITHM_
-  {
     using namespace DES;
-    /** PREPARE DATA **/
-    std::string message = "this is a secret message...";
-    std::string key = "12345678";
+    std::string plaintext = "Attack at dawn! This is a test message.";
+    while (plaintext.size() % 8) plaintext += ".";
 
-    DES::DES_Encryption DES(key); // DES object initialization with key as argument
+    auto des_key = DESUtils::GenerateKey();
+    auto des_iv = DESUtils::GenerateIV();
+    std::string key(des_key.begin(), des_key.end());
+    std::string iv_str(des_iv.begin(), des_iv.end());
+    std::vector<bool> iv = detail::toBitVector(iv_str);
 
-    /** ENCRYPTION **/
-    const DES_Encryption::tBitStream encrypted_as_binary = DES.Encrypt(message); // encrypt message, returns a vector<bool> containing binary data
-    std::cout << "Encrypted: " << DES_Encryption::toByteString(DES_Encryption::binToHex(encrypted_as_binary)) << "\n";
+    auto enc = DES::CBC::Encrypt(plaintext, key, iv);
+    auto dec = DES::CBC::Decrypt(enc.toString(), key, iv);
 
-    /** DECRYPTION **/
-    DES_Encryption::tBitStream decrypted_as_binary = DES.Decrypt(encrypted_as_binary); // decrypt ciphertext
-    std::cout << "Decrypted: " << DES_Encryption::toByteString(DES_Encryption::toAscii(decrypted_as_binary)) << "\n"; 
-  }
-#endif
+    std::cout << "DES CBC Encrypted (hex): " << enc.toHex() << "\n";
+    std::cout << "DES CBC Decrypted: " << dec.toString() << "\n";
 }
 ```
 
+---
 
-![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/lpdsdspldpsldpsdsds.jpg?raw=true)
+## Screenshots
 
-![My Image](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/fewafjewropiewrpewrww.jpg?raw=true)
-```cpp
-        // --------------------------------------
-        //            DES BLOCK CIPHER
-        // --------------------------------------
-        // DATA-ENCRYPTION-STANDARD(DES) Cryptosystem
-        //
-        // The Data Encryption Standard (DES) is a symmetric block cipher that was widely used for
-        // data encryption. Developed by IBM, DES operates on 64-bit blocks of plaintext and
-        // utilizes a 56-bit key for encryption, derived from a 64-bit key where 8 bits are used for
-        // parity checks.
+![DES Screenshot 1](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/lpdsdspldpsldpsdsds.jpg?raw=true)
+![DES Screenshot 2](https://github.com/MrkFrcsl98/DES_algorithm/blob/main/fewafjewropiewrpewrww.jpg?raw=true)
 
-        // DES employs a Feistel network structure, which divides the plaintext into two halves and
-        // processes them through a series of operations over multiple rounds. Specifically, DES
-        // performs 16 rounds of encryption, each using a unique subkey generated from the original
-        // key through a key scheduling mechanism. This mechanism involves permutation and rotation
-        // to ensure that each subkey is distinct, enhancing security.
+---
 
-        // During each round of encryption, the plaintext is split into a left half (L) and a right
-        // half (R). The right half is expanded using a permutation to match the size of the subkey,
-        // resulting in a 48-bit value. This expanded right half is then XORed with the subkey for
-        // that round. The result is passed through a series of substitution boxes (S-boxes), which
-        // perform a nonlinear transformation on the data. The output of the S-boxes is then
-        // permuted using another permutation known as the P-box.
+## License
 
-        // After processing, the left and right halves are swapped, and the process is repeated for
-        // the next round. After the final round, the left and right halves are combined and passed
-        // through a final permutation known as the Inverse Initial Permutation (IP-1) to produce
-        // the ciphertext.
+This project is licensed under the MIT License.
 
-        // The strength of DES lies in its complexity and the multiple rounds it performs. With 16
-        // rounds and a 56-bit key, there are a total of 2^56 possible keys, which was once
-        // considered to make brute-force attacks impractical. However, due to advances in computing
-        // power, DES is now regarded as insecure for modern encryption needs.
-
-        // DES follows the principles of confusion and diffusion, as defined by the cryptographer
-        // Claude Shannon. Confusion obscures the relationship between the plaintext and the
-        // ciphertext, often achieved through substitution tables like the S-boxes. Diffusion
-        // ensures that changes in the plaintext result in significant changes in the ciphertext,
-        // which is accomplished through operations like permutation and mixing of bits. This
-        // spreading effect is known as the avalanche effect, where a small change in the input
-        // (such as flipping a single bit) leads to substantial changes in the output.
-
-        // The "f" function is a crucial component of each round in the DES encryption process. It
-        // takes a 32-bit input and a 48-bit key, performing various mathematical operations,
-        // including permutations, substitutions, and XOR operations, to produce a 32-bit output.
-        // The output of the "f" function is combined with the left half of the block, and the two
-        // halves are then swapped.
-
-        // It is important to note that during the encryption process, the left half (L0) is
-        // modified by XORing it with the output of the "f" function, while the right half (R0)
-        // remains unchanged until the swap occurs. This means that the output of the encryption
-        // process (R1) is equal to R0.
-
-        // The initial step in the encryption process is the Initial Permutation (IP), which
-        // rearranges the input data (the 64-bit plaintext) by copying specific bits from one
-        // position to another. This rearranging process is applied before the rounds of encryption
-        // begin. After the final round, the final permutation (IP-1) is applied, effectively
-        // restoring the data to its original order.
-
-        // The inclusion of the initial permutation was primarily introduced for practical
-        // electrical engineering reasons rather than cryptographic security. It addressed specific
-        // challenges in data transfer within the chip but does not significantly impact the speed
-        // or security of the algorithm.
-
-        // To increase the complexity of DES, an expansion box is used, which takes a 32-bit input
-        // (R) and produces a 48-bit output. Following this, the expanded input is XORed with a
-        // subkey derived from the original key, adding another layer of complexity to the
-        // encryption process.
-
-        // The S-boxes are a critical part of the "f" function, with a total of 8 S-boxes in the DES
-        // encryption process. Each S-box takes in 6 bits and outputs 4 bits, introducing
-        // non-linearity to the algorithm and making it more resistant to attacks. The S-boxes can
-        // be viewed as lookup tables, where the first 4 bits of the input select one of the 16
-        // columns, and the last 2 bits select one of the 4 rows to determine the output value.
-
-        // In 1990, researchers Adi Shamir and Eli Biham discovered a technique called differential
-        // cryptanalysis, which exploits the structure of S-boxes to analyze the differences in
-        // output when small changes are made to the input. This discovery highlighted
-        // vulnerabilities in DES, further contributing to its decline in security for modern
-        // applications.
-```
+---
