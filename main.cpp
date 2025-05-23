@@ -2,13 +2,6 @@
 #include <iostream>
 #include <iomanip>
 
-// Helper to print hex
-std::string toHex(const std::string& in) {
-    std::ostringstream oss;
-    for (unsigned char c : in) oss << std::hex << std::setw(2) << std::setfill('0') << (int)c;
-    return oss.str();
-}
-
 int main() {
     std::string key = "12345678";
     std::string k1 = "12345678", k2 = "abcdefgh", k3 = "ABCDEFGH";
